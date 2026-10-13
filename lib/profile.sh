@@ -67,7 +67,7 @@ variant_profile_name() {
   if [[ "$1" == custom ]]; then
     palette_query '.custom.name'
   else
-    palette_query '.variants[$v].name' --arg v "$1"
+    palette_query '.variants[$v].name // empty' --arg v "$1"
   fi
 }
 
@@ -75,6 +75,6 @@ variant_guid() {
   if [[ "$1" == custom ]]; then
     palette_query '.custom.guid'
   else
-    palette_query '.variants[$v].guid' --arg v "$1"
+    palette_query '.variants[$v].guid // empty' --arg v "$1"
   fi
 }

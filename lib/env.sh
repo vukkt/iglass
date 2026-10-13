@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2034  # these are read by the other lib/ modules
 # Paths and settings. Every location can be overridden with an environment variable, which
 # is how the test suite keeps iglass away from real iTerm2 files and preferences.
 

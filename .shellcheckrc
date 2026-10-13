@@ -1,0 +1,4 @@
+# jq programs are passed in single quotes on purpose; $names inside them are jq variables.
+disable=SC2016
+external-sources=true
+source-path=SCRIPTDIR/..

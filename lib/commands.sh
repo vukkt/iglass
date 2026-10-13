@@ -120,8 +120,9 @@ _validate_look_options() {
   fi
 
   if [[ -n "$OPT_BLUR" ]]; then
-    [[ "$OPT_BLUR" =~ ^[0-9]+$ ]] && ((10#$OPT_BLUR <= 64)) ||
+    if ! [[ "$OPT_BLUR" =~ ^[0-9]+$ ]] || ((10#$OPT_BLUR > 64)); then
       die "--blur must be a whole number from 0 to 64 (got $OPT_BLUR)."
+    fi
     OPT_BLUR=$((10#$OPT_BLUR))
     if ((OPT_BLUR > $(palette_query '.limits.blurRadiusWarn'))); then
       ui_warn "Blur above $(palette_query '.limits.blurRadiusWarn') can make iTerm2 slow on some Macs."
