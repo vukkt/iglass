@@ -3,6 +3,29 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-13
+
+### Added
+- **Ghostty support**, with Apple's real Liquid Glass material (`macos-glass-regular` /
+  `macos-glass-clear`) on macOS 26+, and classic blur elsewhere. iglass asks Ghostty's own
+  validator whether glass is supported instead of guessing from versions.
+- `--terminal iterm2|ghostty|all`; `iglass install` defaults to the terminal it runs in.
+- `--glass auto|native|blur` for Ghostty.
+- Ghostty edits are minimal and reversible: theme files, an `iglass.ghostty` settings file,
+  and one marked include line in the config Ghostty loads last. Symlinked and read-only
+  configs are handled; uninstall restores the config byte for byte.
+- `doctor`, `status`, `preview` and `export --dir` cover Ghostty.
+- Prebuilt Ghostty themes in `themes/ghostty/`.
+- Demo GIF and Ghostty screenshots; `tools/record-gif.sh` and a Ghostty mode for
+  `tools/screenshots.sh`, both over a generated backdrop.
+
+### Changed
+- `install` shows tips only on the first install, and a one-line summary when updating.
+
+### Fixed
+- `install.sh` stopped with "unbound variable" when downloading a release (bash 3.2 read the
+  `…` in a message as part of a variable name).
+
 ## [1.0.0] - 2026-10-13
 
 First release.
@@ -20,4 +43,5 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.1.0]: https://github.com/vukkt/iglass/releases/tag/v1.1.0
 [1.0.0]: https://github.com/vukkt/iglass/releases/tag/v1.0.0

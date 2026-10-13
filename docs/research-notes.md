@@ -1,7 +1,7 @@
 # Research notes
 
 What we verified before writing code, and why iglass is built the way it is.
-Verified on macOS 27.0.1 with iTerm2 3.7.4 (October 2026).
+Verified on macOS 27.0.1 with iTerm2 3.7.4 and Ghostty 1.3.1 (October 2026).
 
 ## Can iTerm2 use real Liquid Glass?
 
@@ -112,9 +112,44 @@ the desktop shows. The palette build checks colors against that blend, in three 
 The high-contrast palette starts from the finished standard colors, so no color can end up
 weaker than its standard counterpart (a test checks this).
 
+## Ghostty
+
+Ghostty's `background-blur` accepts `macos-glass-regular` and `macos-glass-clear` on macOS 26+,
+which host Apple's real glass material. On macOS 27, a glass view tinted with a near-opaque
+dark color was reported to render as a solid fill in another Ghostty-based app
+([manaflow-ai/cmux#5860](https://github.com/manaflow-ai/cmux/issues/5860)). Ghostty 1.3.1 itself
+renders correctly here at every iglass opacity, including 0.90 with a dark background
+(checked over a backdrop before shipping).
+
+- **Themes may set any option** (except `theme` and `config-file`), so each iglass theme
+  carries its variant's opacity and glass alongside the colors.
+- **Config files** load in this order, later winning: `$XDG_CONFIG_HOME/ghostty/config.ghostty`,
+  `…/config`, then the same two names under `~/Library/Application Support/com.mitchellh.ghostty`.
+  The file name `config.ghostty` arrived in Ghostty 1.2.3. iglass adds its include to the
+  last existing file.
+- **`config-file` includes** are processed after the rest of the file that names them, so the
+  include overrides a `theme` set anywhere in the same file. A `?` prefix makes the include
+  optional, and quoted paths with spaces work.
+- **`+validate-config`** also loads the user's own config files, and silently fails when given
+  `--config-default-files=false`. iglass validates with `HOME` and `XDG_CONFIG_HOME` pointed at
+  a scratch folder holding only its files.
+- **`background-opacity` is read only at launch** on macOS; colors can be reloaded live.
+- Ghostty prints "failed to launch the requested command" for commands that exit within about
+  a second, which matters when scripting it (the screenshot tool keeps its command running).
+
 ## Fonts
 
 SF Mono ships inside `Terminal.app/Contents/Resources/Fonts/` but is not installed system-wide
 by default, and Apple's license does not allow redistributing it. iglass keeps the user's font by
 default. Many users rely on Nerd Fonts for prompt icons, and replacing the font would break those.
 `--font` is opt-in. Font availability is checked through `NSFont` with JavaScript for Automation.
+
+For Ghostty, `--font` takes the same PostScript name and iglass looks up the family name
+Ghostty needs through `NSFont`.
+
+## Screenshots
+
+Translucent windows show whatever is behind them, including other windows' text. Screenshots
+and the demo GIF are taken over a generated backdrop (`tools/backdrop.py`) shown in a temporary,
+opaque iTerm2 window, so they are reproducible and never capture anything personal. In iTerm2
+profiles, `Blend: 1` shows a background image at full strength and `0` hides it (verified).
