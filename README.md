@@ -10,7 +10,7 @@ Translucent, softly blurred, built from Apple's system colors, and contrast-chec
 ![iTerm2 3.5+](https://img.shields.io/badge/iTerm2-3.5%2B-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
 
-![iglass Frosted in dark and light mode](docs/screenshots/hero.png)
+<!-- screenshots: docs/screenshots/hero.png (added once captured) -->
 
 </div>
 
@@ -35,10 +35,10 @@ background blur, and a palette designed to sit on top of them. iglass does that 
 
 | Variant | Feels like | Transparency | Readable over |
 |---|---|---|---|
-| ![Clear](docs/screenshots/clear.png) **Clear** | Liquid Glass *Clear* | 50% | Mid-tone wallpapers (aesthetic choice) |
-| ![Frosted](docs/screenshots/frosted.png) **Frosted** · default | Liquid Glass *Regular* | 34% | Typical wallpapers |
-| ![Tinted](docs/screenshots/tinted.png) **Tinted** | macOS *Tinted* mode | 18% | Any wallpaper |
-| ![Solid](docs/screenshots/solid.png) **Solid** | Reduce Transparency | 0% | Any wallpaper |
+| **Clear** | Liquid Glass *Clear* | 50% | Mid-tone wallpapers (aesthetic choice) |
+| **Frosted** · default | Liquid Glass *Regular* | 34% | Typical wallpapers |
+| **Tinted** | macOS *Tinted* mode | 18% | Any wallpaper |
+| **Solid** | Reduce Transparency | 0% | Any wallpaper |
 
 Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS accent colors).
 
@@ -53,7 +53,15 @@ brew install vukkt/tap/iglass
 iglass install
 ```
 
-Or with the install script (puts `iglass` in `~/.local/bin`):
+From source (works with any checkout):
+
+```sh
+git clone https://github.com/vukkt/iglass.git
+cd iglass && ./install.sh --local
+iglass install
+```
+
+Or with the install script, which downloads the latest release (puts `iglass` in `~/.local/bin`):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/vukkt/iglass/main/install.sh | bash
