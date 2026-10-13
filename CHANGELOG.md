@@ -3,6 +3,15 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-13
+
+### Fixed
+- `--app-settings` and `--default` didn't notice iTerm2 was running when run from inside
+  iTerm2: macOS `pgrep` leaves out its own ancestors, and iTerm2 is one of them. The change
+  was written while iTerm2 was open (so it could be overwritten when iTerm2 quit) and iTerm2
+  wasn't restarted. iglass now uses `pgrep -a`, and the tests' stand-in behaves like the real
+  `pgrep` so this can't regress unnoticed.
+
 ## [1.1.0] - 2026-10-13
 
 ### Added
@@ -43,5 +52,6 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.1.1]: https://github.com/vukkt/iglass/releases/tag/v1.1.1
 [1.1.0]: https://github.com/vukkt/iglass/releases/tag/v1.1.0
 [1.0.0]: https://github.com/vukkt/iglass/releases/tag/v1.0.0

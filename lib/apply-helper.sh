@@ -38,14 +38,14 @@ APPLESCRIPT
 [[ -r "$plan" ]] || finish failed "plan file missing: $plan"
 
 was_running=0
-if pgrep -x "$process" >/dev/null 2>&1; then
+if pgrep -a -x "$process" >/dev/null 2>&1; then
   was_running=1
   # iTerm2 may ask the user to confirm quitting; if they cancel, it keeps running and
   # nothing is written.
   osascript -e 'tell application id "com.googlecode.iterm2" to quit' >/dev/null 2>&1 &
   quitter=$!
   ticks=0
-  while pgrep -x "$process" >/dev/null 2>&1; do
+  while pgrep -a -x "$process" >/dev/null 2>&1; do
     if ((ticks >= timeout * 2)); then
       kill "$quitter" >/dev/null 2>&1
       notify "iTerm2 did not quit, so its settings were not changed."

@@ -27,8 +27,10 @@ iterm_version() {
   plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist" 2>/dev/null || true
 }
 
+# -a: pgrep leaves out its own ancestors by default, and when iglass runs inside iTerm2,
+# iTerm2 is one of them.
 iterm_running() {
-  pgrep -x "$IGLASS_ITERM_PROCESS" >/dev/null 2>&1
+  pgrep -a -x "$IGLASS_ITERM_PROCESS" >/dev/null 2>&1
 }
 
 macos_version() {

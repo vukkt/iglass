@@ -56,7 +56,7 @@ ghostty_bin() {
 }
 
 ghostty_running() {
-  pgrep -x ghostty >/dev/null 2>&1
+  pgrep -a -x ghostty >/dev/null 2>&1
 }
 
 # Config files Ghostty loads, in load order (later wins).

@@ -95,7 +95,10 @@ GHOSTTY
 write_mocks() {
   cat >"$MOCK_DIR/bin/pgrep" <<'EOF'
 #!/bin/bash
-[[ -f "$MOCK_DIR/running.${*: -1}" ]] # pgrep -x NAME
+# Like the real pgrep when iglass runs inside the terminal it manages: without -a, the
+# terminal is one of pgrep's ancestors and is left out of the results.
+[[ " $* " == *" -a "* ]] || exit 1
+[[ -f "$MOCK_DIR/running.${*: -1}" ]] # pgrep -a -x NAME
 EOF
 
   cat >"$MOCK_DIR/bin/sw_vers" <<'EOF'
