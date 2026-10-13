@@ -11,6 +11,7 @@ In Ghostty it uses Apple's real Liquid Glass material.
 ![iTerm2 3.5+](https://img.shields.io/badge/iTerm2-3.5%2B-black)
 ![Ghostty 1.0+](https://img.shields.io/badge/Ghostty-1.0%2B-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/vukkt)
 
 <img src="docs/demo.gif" width="760" alt="An iTerm2 window turning glassier and changing accent color live as iglass install commands run">
 
@@ -254,4 +255,6 @@ touch your real settings. See [CONTRIBUTING.md](CONTRIBUTING.md).
 ---
 
 iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2 or
-Ghostty. Liquid Glass, macOS and SF Mono are trademarks of Apple Inc. MIT licensed.
+Ghostty. Liquid Glass, macOS and SF Mono are trademarks of Apple Inc.
+
+MIT · built by [@vukkt](https://github.com/vukkt) · [sponsor](https://github.com/sponsors/vukkt)
