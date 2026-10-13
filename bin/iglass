@@ -1,0 +1,70 @@
+#!/bin/bash
+# iglass — a Liquid Glass–inspired theme for iTerm2.
+# https://github.com/vukkt/iglass · MIT License
+
+set -euo pipefail
+
+IGLASS_VERSION="1.0.0"
+
+# Find the install root, following symlinks (Homebrew and install.sh link bin/iglass into PATH).
+_iglass_resolve_root() {
+  local src=${BASH_SOURCE[0]} dir
+  while [[ -L "$src" ]]; do
+    dir=$(cd -P "$(dirname "$src")" && pwd)
+    src=$(readlink "$src")
+    [[ "$src" == /* ]] || src="$dir/$src"
+  done
+  cd -P "$(dirname "$src")/.." && pwd
+}
+IGLASS_ROOT=$(_iglass_resolve_root)
+
+# shellcheck source=lib/ui.sh
+source "$IGLASS_ROOT/lib/ui.sh"
+# shellcheck source=lib/env.sh
+source "$IGLASS_ROOT/lib/env.sh"
+# shellcheck source=lib/iterm.sh
+source "$IGLASS_ROOT/lib/iterm.sh"
+# shellcheck source=lib/state.sh
+source "$IGLASS_ROOT/lib/state.sh"
+# shellcheck source=lib/profile.sh
+source "$IGLASS_ROOT/lib/profile.sh"
+# shellcheck source=lib/appsettings.sh
+source "$IGLASS_ROOT/lib/appsettings.sh"
+# shellcheck source=lib/doctor.sh
+source "$IGLASS_ROOT/lib/doctor.sh"
+# shellcheck source=lib/commands.sh
+source "$IGLASS_ROOT/lib/commands.sh"
+
+main() {
+  local args=() arg command
+  for arg in "$@"; do
+    case "$arg" in
+      -y | --yes) IGLASS_ASSUME_YES=1 ;;
+      -h | --help) usage; return 0 ;;
+      -v | --version) printf 'iglass %s\n' "$IGLASS_VERSION"; return 0 ;;
+      *) args+=("$arg") ;;
+    esac
+  done
+  if [[ ${#args[@]} -eq 0 ]]; then
+    usage
+    return 0
+  fi
+  command=${args[0]}
+  args=("${args[@]:1}")
+
+  require_jq
+  require_palette
+  case "$command" in
+    install) cmd_install ${args[@]+"${args[@]}"} ;;
+    uninstall) cmd_uninstall ${args[@]+"${args[@]}"} ;;
+    preview) cmd_preview ${args[@]+"${args[@]}"} ;;
+    list) cmd_list ${args[@]+"${args[@]}"} ;;
+    status) cmd_status ${args[@]+"${args[@]}"} ;;
+    doctor) cmd_doctor ${args[@]+"${args[@]}"} ;;
+    export) cmd_export ${args[@]+"${args[@]}"} ;;
+    help) usage ;;
+    *) die "Unknown command: $command" "See: iglass --help" ;;
+  esac
+}
+
+main "$@"

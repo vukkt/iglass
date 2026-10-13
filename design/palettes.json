@@ -1,0 +1,212 @@
+{
+  "$comment": "Source of truth for iglass colors. Edit this file, then run: python3 tools/build_palettes.py. Base values are Apple system colors (HIG, sRGB). The build adjusts lightness only where needed to meet the contrast targets below.",
+  "schema": 1,
+  "modes": {
+    "dark": {
+      "background": "#17181C",
+      "foreground": "#EBEBF0",
+      "ansi": {
+        "black": "#2C2C2E",
+        "red": "#FF453A",
+        "green": "#32D74B",
+        "yellow": "#FFD60A",
+        "blue": "#0A84FF",
+        "magenta": "#BF5AF2",
+        "cyan": "#64D2FF",
+        "white": "#D1D1D6",
+        "brightBlack": "#8E8E93",
+        "brightRed": "#FF6961",
+        "brightGreen": "#30DB5B",
+        "brightYellow": "#FFD426",
+        "brightBlue": "#409CFF",
+        "brightMagenta": "#DA8FFF",
+        "brightCyan": "#70D7FF",
+        "brightWhite": "#FFFFFF"
+      },
+      "find": "#FFD60A"
+    },
+    "light": {
+      "background": "#F5F5F7",
+      "foreground": "#1D1D1F",
+      "ansi": {
+        "black": "#1D1D1F",
+        "red": "#D70015",
+        "green": "#248A3D",
+        "yellow": "#B25000",
+        "blue": "#0040DD",
+        "magenta": "#8944AB",
+        "cyan": "#0071A4",
+        "white": "#C7C7CC",
+        "brightBlack": "#6E6E73",
+        "brightRed": "#FF3B30",
+        "brightGreen": "#28CD41",
+        "brightYellow": "#FFCC00",
+        "brightBlue": "#007AFF",
+        "brightMagenta": "#AF52DE",
+        "brightCyan": "#55BEF0",
+        "brightWhite": "#E5E5EA"
+      },
+      "find": "#FFCC00"
+    }
+  },
+  "accents": {
+    "blue": {
+      "light": "#007AFF",
+      "dark": "#0A84FF"
+    },
+    "purple": {
+      "light": "#AF52DE",
+      "dark": "#BF5AF2"
+    },
+    "pink": {
+      "light": "#FF2D55",
+      "dark": "#FF375F"
+    },
+    "red": {
+      "light": "#FF3B30",
+      "dark": "#FF453A"
+    },
+    "orange": {
+      "light": "#FF9500",
+      "dark": "#FF9F0A"
+    },
+    "yellow": {
+      "light": "#FFCC00",
+      "dark": "#FFD60A"
+    },
+    "green": {
+      "light": "#28CD41",
+      "dark": "#32D74B"
+    },
+    "graphite": {
+      "light": "#8E8E93",
+      "dark": "#98989D"
+    }
+  },
+  "defaultAccent": "blue",
+  "variants": {
+    "clear": {
+      "name": "iglass Clear",
+      "guid": "5476E212-D6EA-4FB0-8BC5-67A140EFED6C",
+      "description": "Maximum translucency, like Liquid Glass Clear. Readability depends on your wallpaper.",
+      "transparency": 0.5,
+      "blur": true,
+      "blurRadius": 12,
+      "minimumContrast": 0.2
+    },
+    "frosted": {
+      "name": "iglass Frosted",
+      "guid": "C65D3085-49CC-477F-97C1-AA8E6E403A36",
+      "description": "Balanced translucency and blur, like Liquid Glass Regular. The default.",
+      "transparency": 0.34,
+      "blur": true,
+      "blurRadius": 24,
+      "minimumContrast": 0.0
+    },
+    "tinted": {
+      "name": "iglass Tinted",
+      "guid": "C5D04D10-0EEF-475B-9490-D8549A159632",
+      "description": "Mostly opaque with a hint of glass, like macOS Tinted mode.",
+      "transparency": 0.18,
+      "blur": true,
+      "blurRadius": 26,
+      "minimumContrast": 0.0
+    },
+    "solid": {
+      "name": "iglass Solid",
+      "guid": "C089A4C2-DFEB-43AE-B58F-AFABD7E1E7C5",
+      "description": "Opaque, no blur. For Reduce Transparency or maximum focus.",
+      "transparency": 0.0,
+      "blur": false,
+      "blurRadius": 0,
+      "minimumContrast": 0.0
+    }
+  },
+  "defaultVariant": "frosted",
+  "custom": {
+    "name": "iglass Custom",
+    "guid": "DBBC5A11-88A3-42BC-A20B-FE4FE550263D"
+  },
+  "contrast": {
+    "$comment": "Text is checked against the window background blended over desktops behind it. Tinted and Solid: pure black and pure white. Frosted: dark and light grey, standing in for typical blurred wallpapers. Clear: mid-grey only; at that translucency no palette can stay readable over every wallpaper.",
+    "tiers": [
+      {
+        "variants": [
+          "tinted",
+          "solid"
+        ],
+        "desktops": [
+          "#000000",
+          "#FFFFFF"
+        ]
+      },
+      {
+        "variants": [
+          "frosted"
+        ],
+        "desktops": [
+          "#333333",
+          "#CCCCCC"
+        ]
+      },
+      {
+        "variants": [
+          "clear"
+        ],
+        "desktops": [
+          "#808080"
+        ]
+      }
+    ],
+    "safeOpacityDesktops": [
+      "#333333",
+      "#CCCCCC"
+    ],
+    "targets": {
+      "foreground": 7.0,
+      "ansiNormal": {
+        "dark": 3.0,
+        "light": 4.5
+      },
+      "ansiBright": {
+        "dark": 4.5,
+        "light": 3.0
+      },
+      "ansiMuted": 3.0,
+      "ansiNormalOnSolid": 4.5,
+      "brightLightnessGap": 0.05,
+      "link": 3.0,
+      "linkOnSolid": 4.5,
+      "cursor": 3.0,
+      "selectionText": 4.5,
+      "findText": 4.5
+    },
+    "muted": {
+      "$comment": "Deliberately quiet slots (comments, autosuggestions). Checked against ansiMuted instead of the normal/bright targets.",
+      "dark": [
+        "brightBlack"
+      ],
+      "light": [
+        "brightBlack"
+      ]
+    },
+    "exempt": {
+      "$comment": "Background-like ANSI slots. Programs use them for fills, not for text on the default background.",
+      "dark": [
+        "black"
+      ],
+      "light": [
+        "white",
+        "brightWhite"
+      ]
+    },
+    "selectionAlpha": {
+      "dark": 0.38,
+      "light": 0.24
+    },
+    "findAlpha": {
+      "dark": 0.42,
+      "light": 0.5
+    }
+  }
+}

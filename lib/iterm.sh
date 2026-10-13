@@ -1,0 +1,71 @@
+# shellcheck shell=bash
+# Talking to iTerm2 and macOS: finding the app, its version, whether it runs, fonts, previews.
+
+# Print the path of iTerm.app, or nothing if it is not installed.
+iterm_app_path() {
+  if [[ -n "${IGLASS_ITERM_APP:-}" ]]; then
+    [[ -d "$IGLASS_ITERM_APP" ]] && printf '%s\n' "$IGLASS_ITERM_APP"
+    return 0
+  fi
+  local candidate
+  for candidate in "/Applications/iTerm.app" "$HOME/Applications/iTerm.app"; do
+    if [[ -d "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  candidate=$(mdfind "kMDItemCFBundleIdentifier == '$IGLASS_ITERM_BUNDLE_ID'" 2>/dev/null | head -n 1)
+  [[ -n "$candidate" && -d "$candidate" ]] && printf '%s\n' "$candidate"
+  return 0
+}
+
+# Print the installed iTerm2 version (e.g. 3.7.4), or nothing.
+iterm_version() {
+  local app
+  app=$(iterm_app_path)
+  [[ -n "$app" ]] || return 0
+  plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist" 2>/dev/null || true
+}
+
+iterm_running() {
+  pgrep -x "$IGLASS_ITERM_PROCESS" >/dev/null 2>&1
+}
+
+macos_version() {
+  sw_vers -productVersion 2>/dev/null || true
+}
+
+# Open a new iTerm2 window using the named profile. iTerm2 reloads the profiles folder
+# asynchronously, so a profile written a moment ago may need a few tries to appear.
+iterm_open_profile() {
+  local name=$1 attempt
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if osascript - "$name" >/dev/null 2>&1 <<'APPLESCRIPT'; then
+on run argv
+  tell application id "com.googlecode.iterm2" to create window with profile (item 1 of argv)
+end run
+APPLESCRIPT
+      return 0
+    fi
+    [[ $attempt -lt 10 ]] && sleep 0.4
+  done
+  return 1
+}
+
+# True when a font with this PostScript name is installed.
+font_available() {
+  local result
+  result=$(osascript -l JavaScript - "$1" 2>/dev/null <<'JXA'
+ObjC.import("AppKit");
+function run(argv) {
+  return $.NSFont.fontWithNameSize(argv[0], 13).isNil() ? "missing" : "ok";
+}
+JXA
+)
+  [[ "$result" == ok ]]
+}
+
+# True when macOS "Reduce transparency" (Accessibility › Display) is on.
+reduce_transparency_on() {
+  [[ "$(defaults read com.apple.universalaccess reduceTransparency 2>/dev/null)" == 1 ]]
+}
