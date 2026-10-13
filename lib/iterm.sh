@@ -65,6 +65,34 @@ JXA
   [[ "$result" == ok ]]
 }
 
+# Print the family name of an installed font, given its PostScript name (Ghostty uses families).
+font_family() {
+  osascript -l JavaScript - "$1" 2>/dev/null <<'JXA'
+ObjC.import("AppKit");
+function run(argv) {
+  const f = $.NSFont.fontWithNameSize(argv[0], 13);
+  return f.isNil() ? "" : ObjC.unwrap(f.familyName);
+}
+JXA
+}
+
+# Which terminal is this running in? Falls back to whichever supported terminal is installed.
+detect_terminal() {
+  case "${TERM_PROGRAM:-}" in
+    ghostty) printf 'ghostty\n' ;;
+    iTerm.app) printf 'iterm2\n' ;;
+    *)
+      if [[ -n "$(iterm_app_path)" ]]; then
+        printf 'iterm2\n'
+      elif [[ -n "$(ghostty_app_path)" ]]; then
+        printf 'ghostty\n'
+      else
+        printf 'iterm2\n'
+      fi
+      ;;
+  esac
+}
+
 # macOS Accessibility › Display settings that iglass adapts to.
 reduce_transparency_on() {
   [[ "$(defaults read "$IGLASS_A11Y_DOMAIN" reduceTransparency 2>/dev/null)" == 1 ]]

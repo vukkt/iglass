@@ -29,6 +29,10 @@ setup_sandbox() {
   export IGLASS_PREFS_DOMAIN="$SANDBOX/prefs"
   export IGLASS_ITERM_APP="$SANDBOX/iTerm.app"
   export IGLASS_A11Y_DOMAIN="$SANDBOX/universalaccess"
+  export IGLASS_GHOSTTY_APP="$SANDBOX/no-ghostty.app" # fake_ghostty installs one
+  export IGLASS_GHOSTTY_XDG_DIR="$SANDBOX/xdg/ghostty"
+  export IGLASS_GHOSTTY_APPSUPPORT_DIR="$SANDBOX/appsupport/com.mitchellh.ghostty"
+  unset TERM_PROGRAM MOCK_GHOSTTY_REJECT MOCK_GHOSTTY_NO_GLASS
   export IGLASS_APPLY_TIMEOUT=2
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS
@@ -50,13 +54,48 @@ fake_iterm_version() {
 EOF
 }
 
-iterm_start() { : >"$MOCK_DIR/running"; }
-iterm_stop() { rm -f "$MOCK_DIR/running"; }
+iterm_start() { : >"$MOCK_DIR/running.iTerm2"; }
+iterm_stop() { rm -f "$MOCK_DIR/running.iTerm2"; }
+
+# A Ghostty.app whose validator mimics Ghostty's: it rejects unknown themes, and rejects the
+# macos-glass values when MOCK_GHOSTTY_NO_GLASS is set (as Ghostty releases before them do).
+fake_ghostty() {
+  export IGLASS_GHOSTTY_APP="$SANDBOX/Ghostty.app"
+  mkdir -p "$IGLASS_GHOSTTY_APP/Contents/MacOS"
+  cat >"$IGLASS_GHOSTTY_APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>com.mitchellh.ghostty</string>
+  <key>CFBundleShortVersionString</key><string>${1:-1.3.1}</string>
+</dict></plist>
+PLIST
+  cat >"$IGLASS_GHOSTTY_APP/Contents/MacOS/ghostty" <<'GHOSTTY'
+#!/bin/bash
+echo "ghostty $*" >>"$MOCK_LOG"
+[[ "$1" == +validate-config ]] || exit 0
+[[ -n "${MOCK_GHOSTTY_REJECT:-}" ]] && { echo "rejected by mock" >&2; exit 1; }
+dir="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
+config="$dir/config.ghostty"
+[[ -f "$config" ]] || exit 0
+if [[ -n "${MOCK_GHOSTTY_NO_GLASS:-}" ]] && grep -rq "macos-glass" "$dir"; then
+  echo "background-blur: invalid value" >&2
+  exit 1
+fi
+theme=$(sed -n 's/^theme = //p' "$config")
+for t in $(tr ',' ' ' <<<"$theme"); do
+  t=${t#light:}
+  t=${t#dark:}
+  [[ -f "$dir/themes/$t" ]] || { echo "theme \"$t\" not found" >&2; exit 1; }
+done
+exit 0
+GHOSTTY
+  chmod +x "$IGLASS_GHOSTTY_APP/Contents/MacOS/ghostty"
+}
 
 write_mocks() {
   cat >"$MOCK_DIR/bin/pgrep" <<'EOF'
 #!/bin/bash
-[[ -f "$MOCK_DIR/running" ]]
+[[ -f "$MOCK_DIR/running.${*: -1}" ]] # pgrep -x NAME
 EOF
 
   cat >"$MOCK_DIR/bin/sw_vers" <<'EOF'
@@ -93,17 +132,21 @@ EOF
 if [[ "$1" == -e ]]; then
   if [[ "$2" == *quit* ]]; then
     echo "osascript quit" >>"$MOCK_LOG"
-    [[ -n "${MOCK_QUIT_REFUSE:-}" ]] || rm -f "$MOCK_DIR/running"
+    [[ -n "${MOCK_QUIT_REFUSE:-}" ]] || rm -f "$MOCK_DIR/running.iTerm2"
   else
     echo "osascript -e $2" >>"$MOCK_LOG"
   fi
   exit 0
 fi
-if [[ "$1" == -l ]]; then # JXA font check: osascript -l JavaScript - NAME
+if [[ "$1" == -l ]]; then # JXA font lookups: osascript -l JavaScript - NAME
+  script=$(cat)
   for f in ${MOCK_MISSING_FONTS:-}; do
-    if [[ "$f" == "$4" ]]; then echo missing; exit 0; fi
+    if [[ "$f" == "$4" ]]; then
+      [[ "$script" == *familyName* ]] || echo missing
+      exit 0
+    fi
   done
-  echo ok
+  if [[ "$script" == *familyName* ]]; then echo "Mock Family"; else echo ok; fi
   exit 0
 fi
 script=$(cat)

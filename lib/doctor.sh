@@ -93,6 +93,10 @@ cmd_doctor() {
 
   accessibility_hints "$(state_get '.options.variant')" "$(state_get '.options.contrast')"
 
+  if [[ -n "$(ghostty_app_path)" || -n "$(state_get '.ghostty.installedAt')" ]]; then
+    _doctor_ghostty || problems=$((problems + $?))
+  fi
+
   status=$(appsettings_status)
   case "$status" in
     applied) ui_ok "App-wide settings applied" ;;
@@ -113,4 +117,59 @@ cmd_doctor() {
   fi
   ui_fail "$problems problem(s) found."
   return 1
+}
+
+# Ghostty checks. Returns the number of problems found.
+_doctor_ghostty() {
+  local n=0 v bin target last="" f out
+  echo
+  ui_title "Ghostty"
+  v=$(ghostty_version)
+  if [[ -z "$v" ]]; then
+    ui_fail "Ghostty is not installed, but iglass files for it are. Run: iglass uninstall --terminal ghostty"
+    return 1
+  fi
+  if version_ge "$v" "$IGLASS_MIN_GHOSTTY"; then
+    ui_ok "Ghostty $v"
+  else
+    ui_fail "Ghostty $v is older than $IGLASS_MIN_GHOSTTY, which iglass needs."
+    n=$((n + 1))
+  fi
+  if version_ge "$(macos_version)" 26 && ghostty_supports_native_glass; then
+    ui_ok "Real Liquid Glass is available (macos-glass)"
+  else
+    ui_info "Real Liquid Glass needs macOS 26+ and a recent Ghostty; iglass uses blur instead"
+  fi
+  [[ -n "$(state_get '.ghostty.installedAt')" ]] || {
+    ui_info "iglass is not installed for Ghostty. Run: iglass install --terminal ghostty"
+    return $n
+  }
+  for f in "$(ghostty_iglass_file)" "$(ghostty_themes_dir)/iglass-frosted-dark"; do
+    if [[ ! -f "$f" ]]; then
+      ui_fail "Missing $f. Run: iglass install --terminal ghostty"
+      n=$((n + 1))
+    fi
+  done
+  target=$(state_get '.ghostty.config')
+  if [[ -z "$target" ]] || ! ghostty_has_include "$target"; then
+    ui_fail "Your Ghostty config doesn't include iglass. Run: iglass install --terminal ghostty"
+    n=$((n + 1))
+  else
+    while IFS= read -r f; do [[ -e "$f" ]] && last=$f; done < <(ghostty_config_candidates)
+    if [[ "$last" != "$target" ]]; then
+      ui_warn "$last loads after $target, so its settings can override iglass."
+    else
+      ui_ok "Included from $target"
+    fi
+  fi
+  # Ghostty's own check of the full config, the user's settings included.
+  bin=$(ghostty_bin)
+  if [[ -n "$bin" ]] && ! out=$("$bin" +validate-config 2>&1); then
+    ui_fail "Ghostty reports problems in your configuration:"
+    printf '%s\n' "$out" | sed 's/^/    /' >&2
+    n=$((n + 1))
+  else
+    ui_ok "Ghostty accepts your configuration"
+  fi
+  return $n
 }

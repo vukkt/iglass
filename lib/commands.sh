@@ -3,16 +3,22 @@
 
 usage() {
   cat <<EOF
-${UI_BOLD}iglass${UI_RESET} $IGLASS_VERSION — a Liquid Glass–inspired theme for iTerm2
+${UI_BOLD}iglass${UI_RESET} $IGLASS_VERSION — a Liquid Glass–inspired theme for iTerm2 and Ghostty
 
 ${UI_BOLD}Usage${UI_RESET}
-  iglass install [options]      Install or update the iglass profiles
-  iglass preview [--variant V]  Open a window with an iglass profile
+  iglass install [options]      Install or update iglass
+  iglass preview [--variant V]  Open a window with an iglass variant
   iglass list                   Show variants and accent colors
   iglass status                 Show what is installed
   iglass doctor                 Check for problems (changes nothing)
-  iglass export [options]       Print the profiles file instead of installing it
+  iglass export [options]       Print the iTerm2 profiles (or write Ghostty files with --dir)
   iglass uninstall              Remove iglass and undo its changes
+
+${UI_BOLD}Terminal${UI_RESET} (install, preview, export, uninstall)
+  --terminal NAME      iterm2, ghostty or all (default: the terminal you're running in;
+                       uninstall defaults to all)
+  --glass MODE         Ghostty only: auto (default), native (real Liquid Glass, macOS 26+)
+                       or blur
 
 ${UI_BOLD}Look options${UI_RESET} (install, export)
   --variant clear|frosted|tinted|solid   Variant used for --default, preview and custom
@@ -26,7 +32,7 @@ ${UI_BOLD}Look options${UI_RESET} (install, export)
   --blur 0–64          Adds an "iglass Custom" profile with this blur radius (0 = off)
   --force              Allow an opacity below the readable minimum
 
-${UI_BOLD}App-wide options${UI_RESET} (install; iTerm2 restarts, original values are saved)
+${UI_BOLD}App-wide options${UI_RESET} (install, iTerm2 only; iTerm2 restarts, original values are saved)
   --app-settings       Native title bar (Automatic theme) and roomier padding
   --default            Make the chosen variant your default profile
 
@@ -37,6 +43,7 @@ ${UI_BOLD}Other${UI_RESET}
 
 ${UI_BOLD}Examples${UI_RESET}
   iglass install
+  iglass install --terminal ghostty --accent purple
   iglass install --accent purple --app-settings --default
   iglass install --variant clear --opacity 0.7 --blur 20 --force
   iglass uninstall
@@ -47,6 +54,7 @@ EOF
 
 OPT_VARIANT="" OPT_ACCENT="" OPT_CONTRAST="" OPT_CURSOR="bar" OPT_WINDOW="native" OPT_FONT="keep"
 OPT_OPACITY="" OPT_BLUR="" OPT_FORCE=0 OPT_APP=0 OPT_DEFAULT=0
+OPT_TERMINAL="" OPT_GLASS="auto" OPT_DIR=""
 
 _need_value() {
   [[ $# -ge 2 && -n "$2" && "$2" != --* ]] || die "$1 needs a value." "See: iglass --help"
@@ -74,6 +82,12 @@ parse_look_options() {
       --opacity) _need_value "$@"; OPT_OPACITY=$2; shift 2 ;;
       --blur) _need_value "$@"; OPT_BLUR=$2; shift 2 ;;
       --force) OPT_FORCE=1; shift ;;
+      --terminal) _need_value "$@"; OPT_TERMINAL=$2; shift 2 ;;
+      --glass) _need_value "$@"; OPT_GLASS=$2; shift 2 ;;
+      --dir)
+        [[ $allow_app == 0 ]] || die "--dir only works with iglass export."
+        _need_value "$@"; OPT_DIR=$2; shift 2
+        ;;
       --app-settings | --default)
         [[ $allow_app == 1 ]] || die "$1 only works with iglass install."
         if [[ "$1" == --default ]]; then OPT_DEFAULT=1; else OPT_APP=1; fi
@@ -105,6 +119,12 @@ _validate_look_options() {
     die "Unknown cursor style: $OPT_CURSOR" "Choose one of: bar box underline keep"
   _one_of "$OPT_WINDOW" native no-titlebar keep ||
     die "Unknown window style: $OPT_WINDOW" "Choose one of: native no-titlebar keep"
+  _one_of "$OPT_GLASS" auto native blur ||
+    die "Unknown glass mode: $OPT_GLASS" "Choose one of: auto native blur"
+  if [[ -n "$OPT_TERMINAL" ]]; then
+    _one_of "$OPT_TERMINAL" iterm2 ghostty all ||
+      die "Unknown terminal: $OPT_TERMINAL" "Choose one of: iterm2 ghostty all"
+  fi
 
   if [[ -n "$OPT_OPACITY" ]]; then
     [[ "$OPT_OPACITY" =~ ^(0(\.[0-9]+)?|1(\.0+)?|\.[0-9]+)$ ]] ||
@@ -159,7 +179,27 @@ _validate_look_options() {
       die "Font $name is not installed." "Check the PostScript name in Font Book › Info."
     fi
     OPT_FONT_SPEC="$name $size"
+    OPT_FONT_FAMILY=$(font_family "$name")
+    OPT_FONT_SIZE=$size
   fi
+}
+
+# Terminals to act on: --terminal, else the one this runs in (all for uninstall).
+resolve_terminals() { # DEFAULT(detect|all)
+  local t=${OPT_TERMINAL:-}
+  if [[ -z "$t" ]]; then
+    if [[ "$1" == all ]]; then t=all; else t=$(detect_terminal); fi
+  fi
+  if [[ "$t" == all ]]; then printf 'iterm2 ghostty\n'; else printf '%s\n' "$t"; fi
+}
+
+# Options for the Ghostty files: the iTerm2 options plus variant, glass mode and font family.
+ghostty_options_json() { # BASE_OPTIONS_JSON
+  jq -n --argjson o "$1" --arg variant "$OPT_VARIANT" --arg glass "$(ghostty_glass_mode "$OPT_GLASS")" \
+    --arg version "$IGLASS_VERSION" --arg family "${OPT_FONT_FAMILY:-}" --arg size "${OPT_FONT_SIZE:-}" '
+    $o + {variant: $variant, glass: $glass, version: $version,
+          fontFamily: (if $family == "" then null else $family end),
+          fontSize: (if $size == "" then null else ($size | tonumber) end)}'
 }
 
 # The options document consumed by lib/profile.jq.
@@ -184,10 +224,23 @@ look_options_json() {
 # --- commands ------------------------------------------------------------------------------
 
 cmd_install() {
-  local opts selected app_v default_guid=""
+  local opts terminals t
   parse_look_options 1 "$@"
   opts=$(look_options_json)
+  terminals=$(resolve_terminals detect)
+  if [[ ($OPT_APP == 1 || $OPT_DEFAULT == 1) && " $terminals " != *" iterm2 "* ]]; then
+    die "--app-settings and --default are iTerm2 settings." "Add --terminal iterm2 (or all)."
+  fi
+  for t in $terminals; do
+    case "$t" in
+      iterm2) _install_iterm2 "$opts" ;;
+      ghostty) _install_ghostty "$opts" ;;
+    esac
+  done
+}
 
+_install_iterm2() {
+  local opts=$1 selected app_v default_guid=""
   app_v=$(iterm_version)
   if [[ -z "$app_v" ]]; then
     ui_warn "iTerm2 doesn't seem to be installed. Installing the profiles anyway."
@@ -201,7 +254,7 @@ cmd_install() {
 
   selected=$OPT_VARIANT
   [[ "$(jq -r '.custom != null' <<<"$opts")" == true ]] && selected=custom
-  ui_ok "Installed iglass profiles ($(palette_query '[.variants[].name] | join(", ")')$(
+  ui_ok "Installed iglass profiles for iTerm2 ($(palette_query '[.variants[].name] | join(", ")')$(
     [[ $selected == custom ]] && printf ', %s' "$(variant_profile_name custom)"))."
   accessibility_hints "$OPT_VARIANT" "${OPT_CONTRAST:-standard}"
 
@@ -216,9 +269,34 @@ cmd_install() {
   fi
 }
 
+_install_ghostty() {
+  local opts=$1 v
+  [[ -n "$(ghostty_app_path)" ]] || die "Ghostty is not installed." "Get it from https://ghostty.org"
+  v=$(ghostty_version)
+  if [[ -n "$v" ]] && ! version_ge "$v" "$IGLASS_MIN_GHOSTTY"; then
+    ui_warn "Ghostty $v is older than $IGLASS_MIN_GHOSTTY; light/dark switching may not work."
+  fi
+  ghostty_install "$(ghostty_options_json "$opts")"
+  accessibility_hints "$OPT_VARIANT" "${OPT_CONTRAST:-standard}"
+}
+
 cmd_export() {
+  local terminal
   parse_look_options 0 "$@"
-  profile_build "$(look_options_json)"
+  terminal=${OPT_TERMINAL:-iterm2}
+  case "$terminal" in
+    iterm2)
+      [[ -z "$OPT_DIR" ]] || die "--dir is for Ghostty, which uses several files." "Add --terminal ghostty."
+      profile_build "$(look_options_json)"
+      ;;
+    ghostty)
+      [[ -n "$OPT_DIR" ]] || die "Ghostty uses several files; pass a folder with --dir." \
+        "Example: iglass export --terminal ghostty --dir ./iglass-ghostty"
+      ghostty_export_dir "$(ghostty_options_json "$(look_options_json)")" "$OPT_DIR"
+      ui_ok "Wrote Ghostty themes and iglass.ghostty to $OPT_DIR"
+      ;;
+    *) die "export handles one terminal at a time." "Use --terminal iterm2 or --terminal ghostty." ;;
+  esac
 }
 
 cmd_preview() {
@@ -226,9 +304,14 @@ cmd_preview() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --variant) _need_value "$@"; variant=$2; shift 2 ;;
-      *) die "Unknown option: $1" "Usage: iglass preview [--variant clear|frosted|tinted|solid|custom]" ;;
+      --terminal) _need_value "$@"; OPT_TERMINAL=$2; shift 2 ;;
+      *) die "Unknown option: $1" "Usage: iglass preview [--variant clear|frosted|tinted|solid|custom] [--terminal iterm2|ghostty]" ;;
     esac
   done
+  if [[ "$(resolve_terminals detect)" == ghostty ]]; then
+    _preview_ghostty "$variant"
+    return
+  fi
   profile_installed || die "iglass is not installed." "Run: iglass install"
   if [[ -z "$variant" ]]; then
     variant=$(jq -r 'if .options.custom != null then "custom" else (.options.variant // "frosted") end' \
@@ -243,6 +326,23 @@ cmd_preview() {
   iterm_open_profile "$name" ||
     die "iTerm2 could not open the \"$name\" profile." "Run: iglass doctor"
   ui_ok "Opened a window with $name."
+}
+
+_preview_ghostty() { # VARIANT
+  local variant=$1
+  [[ -n "$(state_get '.ghostty.installedAt')" ]] ||
+    die "iglass is not installed for Ghostty." "Run: iglass install --terminal ghostty"
+  if [[ -z "$variant" ]]; then
+    variant=$(state_get 'if .ghostty.options.custom then "custom" else .ghostty.options.variant end')
+  fi
+  if [[ "$variant" == custom ]]; then
+    [[ -f "$(ghostty_themes_dir)/iglass-custom-dark" ]] ||
+      die "No custom theme is installed." "Create one with: iglass install --terminal ghostty --opacity 0.8"
+  elif [[ -z "$(palette_query '.variants[$v].name // empty' --arg v "$variant")" ]]; then
+    die "Unknown variant: $variant" "Choose one of: $(palette_query '.variantOrder | join(" ")') custom"
+  fi
+  ghostty_preview "$variant"
+  ui_ok "Opened a Ghostty window with iglass $variant."
 }
 
 cmd_list() {
@@ -266,6 +366,7 @@ cmd_list() {
 cmd_status() {
   local status
   ui_title "iglass $IGLASS_VERSION"
+  ui_title "iTerm2"
   if profile_installed; then
     ui_ok "Installed $(state_get '.installedAt')"
     state_read | jq -r '.options // {} |
@@ -284,7 +385,23 @@ cmd_status() {
     *) ui_dim "  App-wide settings unchanged" ;;
   esac
   [[ -n "$(state_get '.appSettings.pending.id')" ]] && ui_info "A settings change is waiting for iTerm2 to restart."
-  ui_dim "  iTerm2 $(iterm_version) · macOS $(macos_version)"
+  echo
+  ui_title "Ghostty"
+  if [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
+    ui_ok "Installed $(state_get '.ghostty.installedAt')"
+    state_read | jq -r '.ghostty.options // {} |
+      "  variant \(if .custom then "custom (\(.custom.base))" else .variant end) · accent \(.accent) · contrast \(.contrast)",
+      "  glass \(if .glass == "native" then "real Liquid Glass" else "blur" end) · cursor \(.cursor) · font \(.fontFamily // "your own")"'
+    if [[ -n "$(state_get '.ghostty.config')" ]]; then
+      ui_dim "  included from $(state_get '.ghostty.config')"
+    else
+      ui_warn "Not included from your Ghostty config yet; see: iglass doctor"
+    fi
+  else
+    ui_info "Not installed."
+  fi
+  echo
+  ui_dim "iTerm2 $(iterm_version) · Ghostty $(ghostty_version) · macOS $(macos_version)"
 }
 
 cmd_uninstall() {
@@ -293,9 +410,20 @@ cmd_uninstall() {
     case "$1" in
       --restore-app-settings) restore=yes; shift ;;
       --keep-app-settings) restore=no; shift ;;
-      *) die "Unknown option: $1" "Usage: iglass uninstall [--restore-app-settings | --keep-app-settings]" ;;
+      --terminal) _need_value "$@"; OPT_TERMINAL=$2; shift 2 ;;
+      *) die "Unknown option: $1" "Usage: iglass uninstall [--terminal NAME] [--restore-app-settings | --keep-app-settings]" ;;
     esac
   done
+  if [[ -n "$OPT_TERMINAL" ]]; then
+    _one_of "$OPT_TERMINAL" iterm2 ghostty all ||
+      die "Unknown terminal: $OPT_TERMINAL" "Choose one of: iterm2 ghostty all"
+  fi
+  local terminals
+  terminals=$(resolve_terminals all)
+  if [[ " $terminals " == *" ghostty "* ]]; then
+    ghostty_uninstall
+  fi
+  [[ " $terminals " == *" iterm2 "* ]] || return 0
 
   if [[ -f "$IGLASS_PROFILE_FILE" ]]; then
     if profile_is_ours "$IGLASS_PROFILE_FILE"; then

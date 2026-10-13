@@ -1,10 +1,10 @@
 #!/bin/bash
-# iglass — a Liquid Glass–inspired theme for iTerm2.
+# iglass — a Liquid Glass–inspired theme for iTerm2 and Ghostty.
 # https://github.com/vukkt/iglass · MIT License
 
 set -euo pipefail
 
-IGLASS_VERSION="1.0.0"
+IGLASS_VERSION="1.1.0"
 
 # Find the install root, following symlinks (Homebrew and install.sh link bin/iglass into PATH).
 _iglass_resolve_root() {
@@ -28,6 +28,8 @@ source "$IGLASS_ROOT/lib/iterm.sh"
 source "$IGLASS_ROOT/lib/state.sh"
 # shellcheck source=lib/profile.sh
 source "$IGLASS_ROOT/lib/profile.sh"
+# shellcheck source=lib/ghostty.sh
+source "$IGLASS_ROOT/lib/ghostty.sh"
 # shellcheck source=lib/appsettings.sh
 source "$IGLASS_ROOT/lib/appsettings.sh"
 # shellcheck source=lib/doctor.sh

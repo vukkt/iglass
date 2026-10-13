@@ -13,8 +13,10 @@ teardown() {
   run "$IGLASS" install --accent orange
   assert_success_
   plutil -convert xml1 -o /dev/null "$(profile_file)"
+  local version
+  version=$("$IGLASS" --version)
   run jq -r '.options.accent + " " + .options.variant + " " + .version' "$(state_file)"
-  [[ "$output" == "orange frosted 1.0.0" ]]
+  [[ "$output" == "orange frosted ${version#iglass }" ]]
 }
 
 @test "install is idempotent: reinstalling gives a byte-identical file" {

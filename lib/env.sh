@@ -19,6 +19,7 @@ IGLASS_STATE_FILE="$IGLASS_STATE_DIR/state.json"
 
 IGLASS_MIN_MACOS="15.0"     # first release that ships /usr/bin/jq
 IGLASS_MIN_ITERM="3.5.0"    # first release with separate light/dark colors
+IGLASS_MIN_GHOSTTY="1.0.0"  # first release with light:/dark: themes
 
 # version_ge A B — true when dotted version A >= B.
 version_ge() {
