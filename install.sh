@@ -58,7 +58,7 @@ else
     [[ -n "$version" ]] || fail "could not find the latest release of $REPO."
   fi
   [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "not a version: $version"
-  say "Downloading iglass $version…"
+  say "Downloading iglass ${version}..."
   curl -fsSL "https://github.com/$REPO/archive/refs/tags/v$version.tar.gz" -o "$work/iglass.tar.gz" ||
     fail "download failed."
   tar -xzf "$work/iglass.tar.gz" -C "$work"
