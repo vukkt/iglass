@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # macOS 15+ ships /usr/bin/jq, plutil and defaults: the same tools iglass uses at runtime.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lint and test tools
+        run: brew install shellcheck bats-core
+
+      - name: Tool versions
+        run: |
+          sw_vers
+          bash --version | head -1
+          jq --version
+          python3 --version
+          shellcheck --version | head -2
+          bats --version
+
+      - name: Lint
+        run: make lint
+
+      - name: Generated files are up to date
+        run: make check-generated
+
+      - name: Tests
+        run: make test

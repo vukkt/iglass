@@ -1,0 +1,30 @@
+# Development tasks. Requires: python3 (palette build), shellcheck and bats-core (lint/tests).
+
+SHELL_FILES := bin/iglass lib/*.sh install.sh tools/demo.sh tests/*.bash tests/*.bats
+
+.PHONY: all palettes themes lint test check-generated check
+
+all: palettes themes
+
+## Rebuild data/palette.json, docs/contrast-report.md and themes/*.itermcolors
+palettes:
+	python3 tools/build_palettes.py
+
+## Rebuild themes/iglass.json (the profiles file for people who don't use the CLI)
+themes:
+	bin/iglass export > themes/iglass.json
+
+lint:
+	shellcheck $(SHELL_FILES)
+
+test:
+	python3 -m unittest discover -s tests -p 'test_*.py'
+	bats tests/
+
+## Fail when generated files don't match their sources
+check-generated:
+	python3 tools/build_palettes.py --check
+	bin/iglass export | cmp -s - themes/iglass.json || \
+		(echo "themes/iglass.json is out of date: run make themes" >&2; exit 1)
+
+check: lint check-generated test
