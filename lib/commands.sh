@@ -240,7 +240,7 @@ cmd_install() {
 }
 
 _install_iterm2() {
-  local opts=$1 selected app_v default_guid=""
+  local opts=$1 selected app_v default_guid="" first=0
   app_v=$(iterm_version)
   if [[ -z "$app_v" ]]; then
     ui_warn "iTerm2 doesn't seem to be installed. Installing the profiles anyway."
@@ -248,14 +248,14 @@ _install_iterm2() {
     ui_warn "iTerm2 $app_v is older than $IGLASS_MIN_ITERM; light/dark colors won't switch automatically."
   fi
 
+  profile_installed || first=1
   profile_write "$opts"
   state_update '.version = $v | .installedAt = $t | .options = ($o + {variant: $variant})' \
     --arg v "$IGLASS_VERSION" --arg t "$(now_iso)" --argjson o "$opts" --arg variant "$OPT_VARIANT"
 
   selected=$OPT_VARIANT
   [[ "$(jq -r '.custom != null' <<<"$opts")" == true ]] && selected=custom
-  ui_ok "Installed iglass profiles for iTerm2 ($(palette_query '[.variants[].name] | join(", ")')$(
-    [[ $selected == custom ]] && printf ', %s' "$(variant_profile_name custom)"))."
+  ui_ok "$([[ $first == 1 ]] && echo Installed || echo Updated) iglass for iTerm2 ($(install_summary "$opts"))."
   accessibility_hints "$OPT_VARIANT" "${OPT_CONTRAST:-standard}"
 
   if [[ $OPT_DEFAULT == 1 ]]; then
@@ -263,10 +263,22 @@ _install_iterm2() {
   fi
   if [[ $OPT_APP == 1 || -n "$default_guid" ]]; then
     appsettings_apply "$OPT_APP" "$default_guid"
-  else
+  elif [[ $first == 1 ]]; then # tips once, not on every tweak
     ui_dim "  Try it: iglass preview$( [[ $selected != frosted ]] && printf ' --variant %s' "$selected")"
-    ui_dim "  For the full native look add --app-settings (native title bar, roomier padding)."
+    [[ -n "$(appsettings_status)" ]] ||
+      ui_dim "  For the full native look add --app-settings (native title bar, roomier padding)."
   fi
+}
+
+# One line describing what was installed, e.g. "pink accent, custom opacity 0.6".
+install_summary() { # OPTIONS_JSON
+  jq -r '[
+      "\(.accent) accent",
+      (if .contrast == "high" then "high contrast" else empty end),
+      (if .custom.overrides.transparency != null
+       then "custom opacity \((1 - .custom.overrides.transparency) * 100 | round / 100)" else empty end),
+      (if .custom.overrides.blurRadius != null then "custom blur \(.custom.overrides.blurRadius)" else empty end)
+    ] | join(", ")' <<<"$1"
 }
 
 _install_ghostty() {

@@ -111,12 +111,12 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
 
 @test "falls back to blur on older macOS or an older Ghostty" {
   MOCK_MACOS=15.6 run "$IGLASS" install --terminal ghostty
-  assert_output_has "(blur)"
+  assert_output_has "(blur, "
   grep -qx 'background-blur = 24' "$XDG/themes/iglass-frosted-dark"
 
   MOCK_GHOSTTY_NO_GLASS=1 run "$IGLASS" install --terminal ghostty
   assert_success_
-  assert_output_has "(blur)"
+  assert_output_has "(blur, "
   run grep -rq "macos-glass" "$XDG/themes"
   [[ "$status" -eq 1 ]]
 }

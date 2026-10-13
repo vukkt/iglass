@@ -257,7 +257,9 @@ ghostty_remove_include() {
 
 # ghostty_install OPTIONS_JSON
 ghostty_install() {
-  local opts=$1 work themes target f created=false
+  local opts=$1 work themes target f created=false verb=Installed glass
+  [[ -n "$(state_get '.ghostty.installedAt')" ]] && verb=Updated
+  glass=$(jq -r 'if .glass == "native" then "real Liquid Glass" else "blur" end' <<<"$opts")
   mkdir -p "$IGLASS_STATE_DIR"
   work=$(mktemp -d "$IGLASS_STATE_DIR/.ghostty.XXXXXX") || die "Could not create a temporary folder."
   ghostty_export_dir "$opts" "$work"
@@ -291,7 +293,7 @@ ghostty_install() {
                                    else ($nl == "true") end)}' \
       --arg v "$IGLASS_VERSION" --arg t "$(now_iso)" --argjson o "$opts" --arg c "$target" \
       --argjson created "$created" --arg nl "$GHOSTTY_ADDED_NEWLINE"
-    ui_ok "Installed iglass for Ghostty ($(jq -r 'if .glass == "native" then "real Liquid Glass" else "blur" end' <<<"$opts"))."
+    ui_ok "$verb iglass for Ghostty ($glass, $(install_summary "$opts"))."
   else
     state_update '.ghostty = {version: $v, installedAt: $t, options: $o, config: null}' \
       --arg v "$IGLASS_VERSION" --arg t "$(now_iso)" --argjson o "$opts"
