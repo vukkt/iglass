@@ -245,6 +245,7 @@ make themes            # rebuild the prebuilt themes/ files
 make check             # shellcheck, generated-file check, palette tests, bats suite
 tools/screenshots.sh   # README screenshots over a generated backdrop (needs Screen Recording)
 tools/record-gif.sh    # docs/demo.gif (needs ffmpeg)
+osascript -l JavaScript tools/social-card.js BACKDROP.png SHOT.png docs/social-preview.png
 ```
 
 Tests run in a sandbox with stand-ins for iTerm2, Ghostty and system commands, so they never
