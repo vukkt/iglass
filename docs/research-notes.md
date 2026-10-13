@@ -45,7 +45,7 @@ These live in `com.googlecode.iterm2` and cannot be set by a profile
 
 | Key | Default | iglass `--app-settings` |
 |---|---|---|
-| `TabStyleWithAutomaticOption` | 0 | 5 (Minimal) |
+| `TabStyleWithAutomaticOption` | 0 | 4 (Automatic: macOS draws the title bar and tabs) |
 | `TerminalMargin` (side padding) | 5 | more generous padding |
 | `TerminalVMargin` (top/bottom) | 2 | more generous padding |
 

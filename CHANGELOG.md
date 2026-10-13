@@ -15,8 +15,8 @@ First release.
 - Contrast-checked palette build with a generated [contrast report](docs/contrast-report.md).
 - `iglass install`, `preview`, `list`, `status`, `doctor`, `export` and `uninstall`.
 - Custom profile via `--opacity` / `--blur`; `--cursor`, `--window` and `--font` options.
-- Opt-in `--app-settings` (Minimal theme, padding) and `--default`, applied safely while
-  iTerm2 is closed and restored exactly on uninstall.
+- Opt-in `--app-settings` (Automatic theme for a system-drawn title bar, padding) and
+  `--default`, applied safely while iTerm2 is closed and restored exactly on uninstall.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 

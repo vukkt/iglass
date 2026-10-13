@@ -27,7 +27,7 @@ ${UI_BOLD}Look options${UI_RESET} (install, export)
   --force              Allow an opacity below the readable minimum
 
 ${UI_BOLD}App-wide options${UI_RESET} (install; iTerm2 restarts, original values are saved)
-  --app-settings       Minimal theme and roomier padding for all windows
+  --app-settings       Native title bar (Automatic theme) and roomier padding
   --default            Make the chosen variant your default profile
 
 ${UI_BOLD}Other${UI_RESET}
@@ -212,7 +212,7 @@ cmd_install() {
     appsettings_apply "$OPT_APP" "$default_guid"
   else
     ui_dim "  Try it: iglass preview$( [[ $selected != frosted ]] && printf ' --variant %s' "$selected")"
-    ui_dim "  For the full native look add --app-settings (Minimal theme, roomier padding)."
+    ui_dim "  For the full native look add --app-settings (native title bar, roomier padding)."
   fi
 }
 

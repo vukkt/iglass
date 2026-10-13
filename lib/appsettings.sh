@@ -12,7 +12,7 @@ APPSETTINGS_RESULT_FILE_NAME="apply-result"
 # appsettings_targets LOOK(0|1) DEFAULT_GUID — print "key<TAB>type<TAB>value" lines.
 appsettings_targets() {
   if [[ "$1" == 1 ]]; then
-    printf 'TabStyleWithAutomaticOption\tinteger\t5\n' # Minimal theme
+    printf 'TabStyleWithAutomaticOption\tinteger\t4\n' # Automatic theme: system-drawn title bar
     printf 'TerminalMargin\tinteger\t12\n'             # side padding
     printf 'TerminalVMargin\tinteger\t10\n'            # top/bottom padding
   fi
@@ -118,7 +118,7 @@ appsettings_apply() {
   fi
   if prefs_custom_folder; then
     die "iTerm2 loads its settings from a custom folder, so iglass can't change them safely." \
-      "Set the Minimal theme in iTerm2 › Settings › Appearance instead."
+      "Set the theme in iTerm2 › Settings › Appearance › General instead."
   fi
   _appsettings_confirm_restart || die "Nothing changed." "Run again from Terminal.app, or quit iTerm2 first."
 

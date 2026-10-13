@@ -13,7 +13,7 @@ setup() {
 @test "with iTerm2 closed, settings apply immediately" {
   run "$IGLASS" install --app-settings
   assert_success_
-  [[ "$(pref TabStyleWithAutomaticOption)" == 5 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
   [[ "$(pref TerminalMargin)" == 12 ]]
   [[ "$(pref TerminalVMargin)" == 10 ]]
   [[ "$(pref 'Default Bookmark Guid')" == USER-DEFAULT ]]
@@ -88,7 +88,7 @@ setup() {
   assert_logged "osascript quit"
   assert_logged "open -b com.googlecode.iterm2"
   assert_logged "launchctl remove com.github.vukkt.iglass.apply."
-  [[ "$(pref TabStyleWithAutomaticOption)" == 5 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
   run "$IGLASS" status
   assert_output_has "App-wide settings applied"
 }
@@ -110,7 +110,7 @@ setup() {
   iterm_start
   export MOCK_QUIT_REFUSE=1 IGLASS_APPLY_TIMEOUT=1
   "$IGLASS" uninstall --restore-app-settings --yes
-  [[ "$(pref TabStyleWithAutomaticOption)" == 5 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
   run jq -r '.appSettings.previous.TabStyleWithAutomaticOption.value' "$(state_file)"
   [[ "$output" == 1 ]]
 
@@ -127,14 +127,14 @@ setup() {
   assert_success_
   assert_output_has "Kept iTerm2's app-wide settings"
   assert_output_has "pick a new default"
-  [[ "$(pref TabStyleWithAutomaticOption)" == 5 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
 }
 
 @test "uninstall without a terminal to ask keeps settings (never guesses yes)" {
   "$IGLASS" install --app-settings
   run "$IGLASS" uninstall </dev/null
   assert_success_
-  [[ "$(pref TabStyleWithAutomaticOption)" == 5 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
 }
 
 @test "refuses when iTerm2 loads preferences from a custom folder" {

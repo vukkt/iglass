@@ -10,7 +10,10 @@ Translucent, softly blurred, built from Apple's system colors, and contrast-chec
 ![iTerm2 3.5+](https://img.shields.io/badge/iTerm2-3.5%2B-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
 
-<!-- screenshots: docs/screenshots/hero.png (added once captured) -->
+<img src="docs/screenshots/frosted.png" width="49%" alt="iglass Frosted in dark mode">
+<img src="docs/screenshots/frosted-light.png" width="49%" alt="iglass Frosted in light mode">
+
+<sub>iglass Frosted in dark and light mode, over a colorful wallpaper.</sub>
 
 </div>
 
@@ -32,6 +35,13 @@ background blur, and a palette designed to sit on top of them. iglass does that 
   uninstall.
 
 ## Variants
+
+| | Dark | Light |
+|---|---|---|
+| **Clear** | <img src="docs/screenshots/clear.png" alt="iglass Clear, dark"> | <img src="docs/screenshots/clear-light.png" alt="iglass Clear, light"> |
+| **Frosted** | <img src="docs/screenshots/frosted.png" alt="iglass Frosted, dark"> | <img src="docs/screenshots/frosted-light.png" alt="iglass Frosted, light"> |
+| **Tinted** | <img src="docs/screenshots/tinted.png" alt="iglass Tinted, dark"> | <img src="docs/screenshots/tinted-light.png" alt="iglass Tinted, light"> |
+| **Solid** | <img src="docs/screenshots/solid.png" alt="iglass Solid, dark"> | <img src="docs/screenshots/solid-light.png" alt="iglass Solid, light"> |
 
 | Variant | Feels like | Transparency | Readable over |
 |---|---|---|---|
@@ -86,7 +96,7 @@ Color Presets › Import), but they carry colors only, not the glass settings.
 iglass install                          # all four variants, blue accent
 iglass install --accent purple          # pick an accent
 iglass install --contrast high          # stronger colors
-iglass install --app-settings           # Minimal theme + roomier padding (restarts iTerm2)
+iglass install --app-settings           # native title bar + roomier padding (restarts iTerm2)
 iglass install --variant tinted --default   # make a variant your default profile
 
 iglass preview --variant clear          # open a window to try a variant
@@ -111,7 +121,9 @@ Opacity below the readable minimum (0.66) asks for `--force`.
 ### App-wide settings
 
 Some of the native feel comes from iTerm2 settings that apply to every window, not just a
-profile: the **Minimal** theme (title bar blends into the terminal) and generous **padding**.
+profile: iTerm2's **Automatic** theme, which lets macOS draw the title bar and tabs the way it
+draws them for its own apps, and generous **padding**. Apple's Liquid Glass guidance asks apps
+to let the system draw bars rather than custom ones.
 `--app-settings` turns these on. Because iTerm2 saves its settings when it quits, iglass has
 to change them while iTerm2 is closed:
 
@@ -187,6 +199,7 @@ brew uninstall iglass       # or: curl -fsSL …/install.sh | bash -s -- --unins
 ```sh
 make palettes   # rebuild colors after editing design/palettes.json
 make check      # shellcheck, generated-file check, palette tests, bats suite
+tools/screenshots.sh   # README screenshots over a generated backdrop (needs Screen Recording)
 ```
 
 Tests run in a sandbox with stand-ins for iTerm2 and system commands, so they never touch
