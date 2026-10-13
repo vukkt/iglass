@@ -14,6 +14,8 @@ The **contrast** column is the worst case across those backgrounds (WCAG ratio).
 
 Custom `--opacity` values below **0.66** can drop under these targets over typical wallpapers; iglass warns and asks for `--force`.
 
+The **high contrast** palette (`--contrast high`) follows Apple's advice to give custom colors an increased-contrast option. It uses the same backgrounds with stricter targets.
+
 ## Dark mode
 
 Backgrounds checked:
@@ -99,4 +101,90 @@ Backgrounds checked:
 | yellow | `#FFCC00` | `#765D00` | 3.00 | `#765D00` | `#F7EBBC` | 14.08 |
 | green | `#28CD41` | `#007019` | 3.01 | `#007019` | `#C4EBCB` | 12.90 |
 | graphite | `#8E8E93` | `#605F64` | 3.02 | `#605F64` | `#DCDCDF` | 12.30 |
+
+## High contrast: Dark mode
+
+Backgrounds checked:
+
+- tinted over #000000 → `#131417`
+- tinted over #FFFFFF → `#414245`
+- solid over #000000 → `#17181C`
+- solid over #FFFFFF → `#17181C`
+- frosted over #333333 → `#212124`
+- frosted over #CCCCCC → `#555558`
+- clear over #808080 → `#4C4C4E`
+
+| Role | Base | Final | Worst contrast | Target | Adjusted |
+|---|---|---|---|---|---|
+| Foreground | `#F7F8FD` | `#F7F8FD` | 7.01 | 7.0 |  |
+| ANSI 0 black | `#2C2C2E` | `#2C2C2E` | — | exempt |  |
+| ANSI 1 red | `#FF7F70` | `#FFB9AE` | 4.53 | 4.5 | yes |
+| ANSI 2 green | `#32D74B` | `#47E65A` | 4.51 | 4.5 | yes |
+| ANSI 3 yellow | `#FFD60A` | `#FFD60A` | 5.26 | 4.5 |  |
+| ANSI 4 blue | `#62A7FF` | `#A6CDFF` | 4.53 | 4.5 | yes |
+| ANSI 5 magenta | `#D384FF` | `#E5BAFF` | 4.53 | 4.5 | yes |
+| ANSI 6 cyan | `#64D2FF` | `#73D6FF` | 4.53 | 4.5 | yes |
+| ANSI 7 white | `#D1D1D6` | `#D1D1D6` | 4.88 | 4.5 |  |
+| ANSI 8 brightBlack | `#A4A5AA` | `#C8CACF` | 4.53 | 4.5 | yes |
+| ANSI 9 brightRed | `#FFB8B0` | `#FFD4CE` | 5.51 | 5.5 | yes |
+| ANSI 10 brightGreen | `#44E968` | `#5BFC7A` | 5.54 | 5.5 | yes |
+| ANSI 11 brightYellow | `#FFEAA3` | `#FFEAA3` | 6.21 | 5.5 |  |
+| ANSI 12 brightBlue | `#A3CDFF` | `#C7E1FF` | 5.53 | 5.5 | yes |
+| ANSI 13 brightMagenta | `#E7B9FF` | `#F0D4FF` | 5.51 | 5.5 | yes |
+| ANSI 14 brightCyan | `#95E0FF` | `#ADE7FF` | 5.54 | 5.5 | yes |
+| ANSI 15 brightWhite | `#FFFFFF` | `#FFFFFF` | 7.43 | 5.5 |  |
+
+| Accent | Base | Link | Link contrast | Cursor | Selection | Text on selection |
+|---|---|---|---|---|---|---|
+| blue | `#0A84FF` | `#A6CDFF` | 4.53 | `#A6CDFF` | `#124172` | 9.78 |
+| purple | `#BF5AF2` | `#E5BAFF` | 4.53 | `#E5BAFF` | `#57316D` | 9.59 |
+| pink | `#FF375F` | `#FFB7BA` | 4.51 | `#FFB7BA` | `#6F2435` | 10.00 |
+| red | `#FF453A` | `#FFB9AE` | 4.53 | `#FFB9AE` | `#6F2927` | 9.79 |
+| orange | `#FF9F0A` | `#FFBD75` | 4.52 | `#FFBD75` | `#6F4B15` | 7.35 |
+| yellow | `#FFD60A` | `#FFD60A` | 5.26 | `#FFD60A` | `#615516` | 7.02 |
+| green | `#32D74B` | `#47E65A` | 4.51 | `#47E65A` | `#21612E` | 7.04 |
+| graphite | `#98989D` | `#C9C9CE` | 4.50 | `#C9C9CE` | `#48494D` | 8.48 |
+
+## High contrast: Light mode
+
+Backgrounds checked:
+
+- tinted over #000000 → `#C9C9CB`
+- tinted over #FFFFFF → `#F7F7F8`
+- solid over #000000 → `#F5F5F7`
+- solid over #FFFFFF → `#F5F5F7`
+- frosted over #333333 → `#B3B3B4`
+- frosted over #CCCCCC → `#E7E7E8`
+- clear over #808080 → `#BABABC`
+
+| Role | Base | Final | Worst contrast | Target | Adjusted |
+|---|---|---|---|---|---|
+| Foreground | `#1D1D1F` | `#1D1D1F` | 8.03 | 7.0 |  |
+| ANSI 0 black | `#1D1D1F` | `#1D1D1F` | 8.03 | 6.0 |  |
+| ANSI 1 red | `#92000B` | `#6E0006` | 6.02 | 6.0 | yes |
+| ANSI 2 green | `#00521B` | `#003C12` | 6.06 | 6.0 | yes |
+| ANSI 3 yellow | `#763200` | `#582400` | 6.01 | 6.0 | yes |
+| ANSI 4 blue | `#0035BB` | `#00268E` | 6.01 | 6.0 | yes |
+| ANSI 5 magenta | `#6A238A` | `#560574` | 6.00 | 6.0 | yes |
+| ANSI 6 cyan | `#004A6E` | `#003653` | 6.07 | 6.0 | yes |
+| ANSI 7 white | `#C7C7CC` | `#C7C7CC` | — | exempt |  |
+| ANSI 8 brightBlack | `#605F64` | `#46454A` | 4.53 | 4.5 | yes |
+| ANSI 9 brightRed | `#C30006` | `#920003` | 4.51 | 4.5 | yes |
+| ANSI 10 brightGreen | `#007019` | `#005210` | 4.53 | 4.5 | yes |
+| ANSI 11 brightYellow | `#765D00` | `#574300` | 4.54 | 4.5 | yes |
+| ANSI 12 brightBlue | `#005CC5` | `#004393` | 4.51 | 4.5 | yes |
+| ANSI 13 brightMagenta | `#902FBD` | `#73009E` | 4.51 | 4.5 | yes |
+| ANSI 14 brightCyan | `#00678D` | `#004B69` | 4.53 | 4.5 | yes |
+| ANSI 15 brightWhite | `#E5E5EA` | `#E5E5EA` | — | exempt |  |
+
+| Accent | Base | Link | Link contrast | Cursor | Selection | Text on selection |
+|---|---|---|---|---|---|---|
+| blue | `#007AFF` | `#004393` | 4.51 | `#004393` | `#BAD7F9` | 11.36 |
+| purple | `#AF52DE` | `#73009E` | 4.51 | `#73009E` | `#E4CEF1` | 11.54 |
+| pink | `#FF2D55` | `#900027` | 4.53 | `#900027` | `#F7C5D0` | 11.10 |
+| red | `#FF3B30` | `#920003` | 4.51 | `#920003` | `#F7C8C7` | 11.25 |
+| orange | `#FF9500` | `#6A3A00` | 4.52 | `#6A3A00` | `#F7DEBC` | 12.93 |
+| yellow | `#FFCC00` | `#574300` | 4.54 | `#574300` | `#F7EBBC` | 14.08 |
+| green | `#28CD41` | `#005210` | 4.53 | `#005210` | `#C4EBCB` | 12.90 |
+| graphite | `#8E8E93` | `#46454A` | 4.53 | `#46454A` | `#DCDCDF` | 12.30 |
 

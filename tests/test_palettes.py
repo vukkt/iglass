@@ -22,13 +22,19 @@ with open(os.path.join(ROOT, "data", "palette.json")) as f:
 
 MODES = ("dark", "light")
 
+# Each contrast level: (design with that level's targets, its colors in data/palette.json).
+LEVELS = {
+    "standard": (DESIGN, PALETTE),
+    "high": (build.with_targets(DESIGN, DESIGN["contrast"]["highContrastTargets"]), PALETTE["highContrast"]),
+}
+
 
 def rgb(color):
     return tuple(int(round(color[c] * 255)) for c in ("Red Component", "Green Component", "Blue Component"))
 
 
-def backgrounds(mode, palette_modes="modes"):
-    bg = rgb(PALETTE[palette_modes][mode]["Background Color"])
+def backgrounds(mode, colors=PALETTE):
+    bg = rgb(colors["modes"][mode]["Background Color"])
     return [build.blend(build.hex_to_rgb(d), bg, DESIGN["variants"][v]["transparency"])
             for tier in DESIGN["contrast"]["tiers"] for v in tier["variants"] for d in tier["desktops"]]
 
@@ -75,57 +81,79 @@ class GeneratedFiles(unittest.TestCase):
 
 
 class Contrast(unittest.TestCase):
+    """Every promise in the contrast report, for both the standard and high-contrast palettes."""
+
+    def levels(self):
+        for level, (design, colors) in LEVELS.items():
+            with self.subTest(level=level):
+                yield level, design, design["contrast"]["targets"], colors
+
     def test_foreground(self):
-        for mode in MODES:
-            fg = rgb(PALETTE["modes"][mode]["Foreground Color"])
-            self.assertGreaterEqual(build.min_contrast(fg, backgrounds(mode)),
-                                    DESIGN["contrast"]["targets"]["foreground"], mode)
+        for level, design, t, colors in self.levels():
+            for mode in MODES:
+                fg = rgb(colors["modes"][mode]["Foreground Color"])
+                self.assertGreaterEqual(build.min_contrast(fg, backgrounds(mode, colors)), t["foreground"],
+                                        "%s %s" % (level, mode))
 
     def test_ansi_colors(self):
+        for level, design, t, colors in self.levels():
+            for mode in MODES:
+                bgs = backgrounds(mode, colors)
+                for i, name in enumerate(build.ANSI_ORDER):
+                    target = build.ansi_target(design, mode, name)
+                    if target is None:
+                        continue
+                    c = rgb(colors["modes"][mode]["Ansi %d Color" % i])
+                    self.assertGreaterEqual(build.min_contrast(c, bgs), target, "%s %s %s" % (level, mode, name))
+
+    def test_normal_colors_on_solid_background(self):
+        for level, design, t, colors in self.levels():
+            for mode in MODES:
+                bg = rgb(colors["modes"][mode]["Background Color"])
+                for name in build.NORMAL_CHROMATIC:
+                    c = rgb(colors["modes"][mode]["Ansi %d Color" % build.ANSI_ORDER.index(name)])
+                    self.assertGreaterEqual(build.contrast(c, bg), t["ansiNormalOnSolid"],
+                                            "%s %s %s" % (level, mode, name))
+
+    def test_bright_colors_are_visibly_lighter(self):
+        for level, design, t, colors in self.levels():
+            gap = t["brightLightnessGap"] - 0.005
+            for mode in MODES:
+                for normal, bright in build.bright_pairs(design, mode):
+                    ln = build.rgb_to_oklch(rgb(colors["modes"][mode]["Ansi %d Color" % build.ANSI_ORDER.index(normal)]))[0]
+                    lb = build.rgb_to_oklch(rgb(colors["modes"][mode]["Ansi %d Color" % build.ANSI_ORDER.index(bright)]))[0]
+                    self.assertGreaterEqual(lb - ln, gap, "%s %s %s/%s" % (level, mode, normal, bright))
+
+    def test_accents(self):
+        for level, design, t, colors in self.levels():
+            for name, acc in colors["accents"].items():
+                for mode in MODES:
+                    bgs = backgrounds(mode, colors)
+                    bg = rgb(colors["modes"][mode]["Background Color"])
+                    fg = rgb(colors["modes"][mode]["Foreground Color"])
+                    link = rgb(acc[mode]["Link Color"])
+                    where = "%s %s %s" % (level, mode, name)
+                    self.assertGreaterEqual(build.min_contrast(link, bgs), t["link"], where)
+                    self.assertGreaterEqual(build.contrast(link, bg), t["linkOnSolid"], where)
+                    self.assertGreaterEqual(build.min_contrast(rgb(acc[mode]["Cursor Color"]), bgs), t["cursor"], where)
+                    self.assertGreaterEqual(build.contrast(fg, rgb(acc[mode]["Selection Color"])), t["selectionText"], where)
+
+    def test_find_highlight_keeps_text_readable(self):
+        for level, design, t, colors in self.levels():
+            for mode in MODES:
+                fg = rgb(colors["modes"][mode]["Foreground Color"])
+                find = rgb(colors["modes"][mode]["Match Background Color"])
+                self.assertGreaterEqual(build.contrast(fg, find), t["findText"], "%s %s" % (level, mode))
+
+    def test_high_contrast_is_actually_stronger(self):
         for mode in MODES:
             bgs = backgrounds(mode)
             for i, name in enumerate(build.ANSI_ORDER):
-                target = build.ansi_target(DESIGN, mode, name)
-                if target is None:
+                if build.ansi_target(DESIGN, mode, name) is None:
                     continue
-                c = rgb(PALETTE["modes"][mode]["Ansi %d Color" % i])
-                self.assertGreaterEqual(build.min_contrast(c, bgs), target, "%s %s" % (mode, name))
-
-    def test_normal_colors_on_solid_background(self):
-        target = DESIGN["contrast"]["targets"]["ansiNormalOnSolid"]
-        for mode in MODES:
-            bg = rgb(PALETTE["modes"][mode]["Background Color"])
-            for name in build.NORMAL_CHROMATIC:
-                i = build.ANSI_ORDER.index(name)
-                c = rgb(PALETTE["modes"][mode]["Ansi %d Color" % i])
-                self.assertGreaterEqual(build.contrast(c, bg), target, "%s %s" % (mode, name))
-
-    def test_bright_colors_are_visibly_lighter(self):
-        gap = DESIGN["contrast"]["targets"]["brightLightnessGap"] - 0.005
-        for mode in MODES:
-            for normal, bright in build.bright_pairs(DESIGN, mode):
-                ln = build.rgb_to_oklch(rgb(PALETTE["modes"][mode]["Ansi %d Color" % build.ANSI_ORDER.index(normal)]))[0]
-                lb = build.rgb_to_oklch(rgb(PALETTE["modes"][mode]["Ansi %d Color" % build.ANSI_ORDER.index(bright)]))[0]
-                self.assertGreaterEqual(lb - ln, gap, "%s %s/%s" % (mode, normal, bright))
-
-    def test_accents(self):
-        t = DESIGN["contrast"]["targets"]
-        for name, acc in PALETTE["accents"].items():
-            for mode in MODES:
-                bgs = backgrounds(mode)
-                bg = rgb(PALETTE["modes"][mode]["Background Color"])
-                fg = rgb(PALETTE["modes"][mode]["Foreground Color"])
-                link = rgb(acc[mode]["Link Color"])
-                self.assertGreaterEqual(build.min_contrast(link, bgs), t["link"], name)
-                self.assertGreaterEqual(build.contrast(link, bg), t["linkOnSolid"], name)
-                self.assertGreaterEqual(build.min_contrast(rgb(acc[mode]["Cursor Color"]), bgs), t["cursor"], name)
-                self.assertGreaterEqual(build.contrast(fg, rgb(acc[mode]["Selection Color"])), t["selectionText"], name)
-
-    def test_find_highlight_keeps_text_readable(self):
-        for mode in MODES:
-            fg = rgb(PALETTE["modes"][mode]["Foreground Color"])
-            find = rgb(PALETTE["modes"][mode]["Match Background Color"])
-            self.assertGreaterEqual(build.contrast(fg, find), DESIGN["contrast"]["targets"]["findText"])
+                std = build.min_contrast(rgb(PALETTE["modes"][mode]["Ansi %d Color" % i]), bgs)
+                hc = build.min_contrast(rgb(PALETTE["highContrast"]["modes"][mode]["Ansi %d Color" % i]), bgs)
+                self.assertGreaterEqual(hc + 1e-9, std, "%s %s" % (mode, name))
 
 
 class Variants(unittest.TestCase):

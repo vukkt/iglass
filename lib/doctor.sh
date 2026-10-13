@@ -91,9 +91,7 @@ cmd_doctor() {
     ui_warn "iTerm2 loads settings from a custom folder; iglass can't change app-wide settings."
   fi
 
-  if reduce_transparency_on; then
-    ui_warn "Reduce transparency is on in macOS. iglass Solid is the best match: iglass preview --variant solid"
-  fi
+  accessibility_hints "$(state_get '.options.variant')" "$(state_get '.options.contrast')"
 
   status=$(appsettings_status)
   case "$status" in

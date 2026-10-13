@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# shellcheck disable=SC2030,SC2031  # per-test exports are meant to stay inside each test
 # App-wide settings: apply, exact restore, and the restart-iTerm2 flow (all sandboxed).
 
 load helpers

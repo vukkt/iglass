@@ -28,19 +28,22 @@ MODE_KEYS='[
 
 @test "every variant and accent produces a valid, complete document" {
   local accents accent f
+  local contrast
   accents=$(jq -r '.accentOrder[]' "$REPO_ROOT/data/palette.json")
-  for accent in $accents; do
-    f="$BATS_TEST_TMPDIR/$accent.json"
-    export_to "$f" --accent "$accent" --opacity 0.8 --blur 10
-    plutil -convert xml1 -o /dev/null "$f"
-    run jq -e --argjson keys "$MODE_KEYS" '
-      .Profiles | length == 5 and all(.[];
-        . as $p | all($keys[]; . as $k |
-          ($p | has($k)) and ($p | has($k + " (Light)")) and ($p | has($k + " (Dark)"))))' "$f"
-    if [[ "$status" -ne 0 ]]; then
-      echo "accent $accent is missing light/dark keys" >&2
-      return 1
-    fi
+  for contrast in standard high; do
+    for accent in $accents; do
+      f="$BATS_TEST_TMPDIR/$contrast-$accent.json"
+      export_to "$f" --accent "$accent" --contrast "$contrast" --opacity 0.8 --blur 10
+      plutil -convert xml1 -o /dev/null "$f"
+      run jq -e --argjson keys "$MODE_KEYS" '
+        .Profiles | length == 5 and all(.[];
+          . as $p | all($keys[]; . as $k |
+            ($p | has($k)) and ($p | has($k + " (Light)")) and ($p | has($k + " (Dark)"))))' "$f"
+      if [[ "$status" -ne 0 ]]; then
+        echo "$contrast/$accent is missing light/dark keys" >&2
+        return 1
+      fi
+    done
   done
 }
 
@@ -133,6 +136,21 @@ MODE_KEYS='[
   run jq -e 'all(.Profiles[]; (has("Cursor Type") or has("Blinking Cursor") or has("Window Type")
     or has("Normal Font")) | not)' "$BATS_TEST_TMPDIR/p.json"
   assert_success_
+}
+
+@test "--contrast high swaps colors but keeps the glass settings" {
+  export_to "$BATS_TEST_TMPDIR/std.json"
+  export_to "$BATS_TEST_TMPDIR/hc.json" --contrast high
+  run jq -n -e --slurpfile a "$BATS_TEST_TMPDIR/std.json" --slurpfile b "$BATS_TEST_TMPDIR/hc.json" '
+    ($a[0].Profiles[1]."Ansi 1 Color (Light)" != $b[0].Profiles[1]."Ansi 1 Color (Light)")
+    and ([$a[0].Profiles[] | .Transparency, ."Blur Radius"] == [$b[0].Profiles[] | .Transparency, ."Blur Radius"])'
+  assert_success_
+}
+
+@test "--contrast rejects unknown levels" {
+  run "$IGLASS" export --contrast extreme
+  assert_failure_
+  assert_output_has "Unknown contrast level"
 }
 
 @test "accent drives cursor, selection and link colors" {

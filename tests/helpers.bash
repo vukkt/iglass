@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+# shellcheck disable=SC2034,SC2154  # bats sets $status/$output; the .bats files use $IGLASS
 # Shared setup for the bats suites.
 #
 # Every test gets its own sandbox: a temporary profiles folder, state folder, preferences file
@@ -26,6 +28,7 @@ setup_sandbox() {
   export IGLASS_STATE_DIR="$SANDBOX/state"
   export IGLASS_PREFS_DOMAIN="$SANDBOX/prefs"
   export IGLASS_ITERM_APP="$SANDBOX/iTerm.app"
+  export IGLASS_A11Y_DOMAIN="$SANDBOX/universalaccess"
   export IGLASS_APPLY_TIMEOUT=2
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS

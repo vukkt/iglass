@@ -2,7 +2,8 @@
 #
 # Inputs:
 #   $palette  palette data (data/palette.json), passed with --slurpfile
-#   $o        options, passed with --argjson: {accent, cursor, window, font, custom}
+#   $o        options, passed with --argjson: {accent, contrast, cursor, window, font, custom}
+#       contrast: "standard" | "high"
 #       cursor: "bar" | "box" | "underline" | "keep"
 #       window: "native" | "no-titlebar" | "keep"
 #       font:   null | "PostScriptName Size"
@@ -14,13 +15,14 @@
 # works (keyboard, shell, font unless asked) are left alone on purpose.
 
 $palette[0] as $p |
+(if $o.contrast == "high" then $p.highContrast else $p end) as $colors |
 
 def suffixed($sfx): with_entries(.key += $sfx);
 
 # Settings iTerm2 stores per appearance (plain, " (Light)", " (Dark)").
 def modal($mode; $variant):
-  $p.modes[$mode]
-  + $p.accents[$o.accent][$mode]
+  $colors.modes[$mode]
+  + $colors.accents[$o.accent][$mode]
   + {
       "Minimum Contrast": $variant.minimumContrast,
       "Faint Text Alpha": 0.55,

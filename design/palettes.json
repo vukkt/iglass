@@ -181,6 +181,25 @@
       "selectionText": 4.5,
       "findText": 4.5
     },
+    "highContrastTargets": {
+      "$comment": "Used for --contrast high (Apple: an increased-contrast option for each variant). Overrides the targets above.",
+      "foreground": 7.0,
+      "ansiNormal": {
+        "dark": 4.5,
+        "light": 6.0
+      },
+      "ansiBright": {
+        "dark": 5.5,
+        "light": 4.5
+      },
+      "ansiMuted": 4.5,
+      "ansiNormalOnSolid": 6.0,
+      "link": 4.5,
+      "linkOnSolid": 6.0,
+      "cursor": 4.5,
+      "selectionText": 7.0,
+      "findText": 7.0
+    },
     "muted": {
       "$comment": "Deliberately quiet slots (comments, autosuggestions). Checked against ansiMuted instead of the normal/bright targets.",
       "dark": [

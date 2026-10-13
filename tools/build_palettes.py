@@ -15,6 +15,7 @@ Usage: python3 tools/build_palettes.py [--check]
   --check   build in memory and exit 1 if any generated file is out of date (used by CI)
 """
 
+import copy
 import json
 import math
 import os
@@ -388,8 +389,15 @@ def validate_design(design):
         raise PaletteError("defaultAccent is not an accent")
 
 
-def build(design):
-    validate_design(design)
+def with_targets(design, overrides):
+    """A copy of the design whose contrast targets are replaced by `overrides`."""
+    d = copy.deepcopy(design)
+    d["contrast"]["targets"].update(overrides)
+    return d
+
+
+def build_level(design):
+    """Build colors for one contrast level. Returns (modes, accents, final, report)."""
     report = {}
     modes, final = {}, {}
     for mode in ("dark", "light"):
@@ -406,6 +414,22 @@ def build(design):
             accents[name][mode], final[mode]["accents"][name] = build_accent(
                 design, mode, final[mode], acc[mode], rows)
             report[mode]["accents"].append((name,) + rows[0])
+    return modes, accents, final, report
+
+
+def build(design):
+    validate_design(design)
+    modes, accents, final, report = build_level(design)
+    # Apple: give custom colors "an increased contrast option for each variant". The high
+    # contrast build starts from the finished standard colors, so every adjustment can only
+    # move further toward contrast and no color ends up weaker than in the standard palette.
+    high_design = with_targets(design, design["contrast"]["highContrastTargets"])
+    for mode in ("dark", "light"):
+        spec = high_design["modes"][mode]
+        spec["foreground"] = rgb_to_hex(final[mode]["fg"])
+        for name, value in final[mode]["ansi"].items():
+            spec["ansi"][name] = rgb_to_hex(value)
+    hc_modes, hc_accents, _, hc_report = build_level(high_design)
 
     variants = {}
     for name, v in design["variants"].items():
@@ -429,8 +453,9 @@ def build(design):
         },
         "modes": modes,
         "accents": accents,
+        "highContrast": {"modes": hc_modes, "accents": hc_accents},
     }
-    return palette, report
+    return palette, {"standard": (design, report), "high": (high_design, hc_report)}
 
 
 def render_report(design, palette, report):
@@ -458,10 +483,21 @@ def render_report(design, palette, report):
         "Custom `--opacity` values below **%.2f** can drop under these targets over typical "
         "wallpapers; iglass warns and asks for `--force`." % palette["limits"]["minSafeOpacity"],
         "",
+        "The **high contrast** palette (`--contrast high`) follows Apple's advice to give custom "
+        "colors an increased-contrast option. It uses the same backgrounds with stricter targets.",
+        "",
     ]
+    for level, title in (("standard", ""), ("high", "High contrast: ")):
+        _, r_level = report[level]
+        lines += _render_level(r_level, title)
+    return "\n".join(lines)
+
+
+def _render_level(report, title):
+    lines = []
     for mode in ("dark", "light"):
         r = report[mode]
-        lines += ["## %s mode" % mode.capitalize(), "", "Backgrounds checked:", ""]
+        lines += ["## %s%s mode" % (title, mode.capitalize()), "", "Backgrounds checked:", ""]
         lines += ["- %s → `%s`" % (n, h) for n, h in r["scenes"]]
         lines += ["", "| Role | Base | Final | Worst contrast | Target | Adjusted |",
                   "|---|---|---|---|---|---|"]
@@ -476,7 +512,7 @@ def render_report(design, palette, report):
             lines.append("| %s | `%s` | `%s` | %.2f | `%s` | `%s` | %.2f |" % (
                 name, base, link, lc, cursor, sel, sc))
         lines.append("")
-    return "\n".join(lines)
+    return lines
 
 
 def render_itermcolors(palette, mode, accent):

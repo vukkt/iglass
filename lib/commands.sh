@@ -18,7 +18,8 @@ ${UI_BOLD}Look options${UI_RESET} (install, export)
   --variant clear|frosted|tinted|solid   Variant used for --default, preview and custom
                                          settings (default: frosted)
   --accent NAME        blue, purple, pink, red, orange, yellow, green, graphite
-  --cursor STYLE       bar (default), box, underline, or keep (use your own)
+  --contrast LEVEL     standard (default) or high (stronger colors for readability)
+  --cursor STYLE      bar (default), box, underline, or keep (use your own)
   --window STYLE       native (default), no-titlebar, or keep (use your own)
   --font FONT          keep (default), sf-mono, or "PostScriptName [size]"
   --opacity 0.05–1     Adds an "iglass Custom" profile with this opacity
@@ -44,7 +45,7 @@ EOF
 
 # --- look options --------------------------------------------------------------------------
 
-OPT_VARIANT="" OPT_ACCENT="" OPT_CURSOR="bar" OPT_WINDOW="native" OPT_FONT="keep"
+OPT_VARIANT="" OPT_ACCENT="" OPT_CONTRAST="" OPT_CURSOR="bar" OPT_WINDOW="native" OPT_FONT="keep"
 OPT_OPACITY="" OPT_BLUR="" OPT_FORCE=0 OPT_APP=0 OPT_DEFAULT=0
 
 _need_value() {
@@ -66,6 +67,7 @@ parse_look_options() {
     case "$1" in
       --variant) _need_value "$@"; OPT_VARIANT=$2; shift 2 ;;
       --accent) _need_value "$@"; OPT_ACCENT=$2; shift 2 ;;
+      --contrast) _need_value "$@"; OPT_CONTRAST=$2; shift 2 ;;
       --cursor) _need_value "$@"; OPT_CURSOR=$2; shift 2 ;;
       --window) _need_value "$@"; OPT_WINDOW=$2; shift 2 ;;
       --font) _need_value "$@"; OPT_FONT=$2; shift 2 ;;
@@ -97,6 +99,8 @@ _validate_look_options() {
     die "Unknown variant: $OPT_VARIANT" "Choose one of: ${variants[*]}"
   _one_of "$OPT_ACCENT" "${accents[@]}" ||
     die "Unknown accent: $OPT_ACCENT" "Choose one of: ${accents[*]}"
+  _one_of "${OPT_CONTRAST:-standard}" standard high ||
+    die "Unknown contrast level: $OPT_CONTRAST" "Choose one of: standard high"
   _one_of "$OPT_CURSOR" bar box underline keep ||
     die "Unknown cursor style: $OPT_CURSOR" "Choose one of: bar box underline keep"
   _one_of "$OPT_WINDOW" native no-titlebar keep ||
@@ -170,9 +174,10 @@ look_options_json() {
           {blur: (($blur | tonumber) > 0), blurRadius: ($blur | tonumber)} end)
       )}')
   fi
-  jq -n --arg accent "$OPT_ACCENT" --arg cursor "$OPT_CURSOR" --arg window "$OPT_WINDOW" \
+  jq -n --arg accent "$OPT_ACCENT" --arg contrast "${OPT_CONTRAST:-standard}" \
+    --arg cursor "$OPT_CURSOR" --arg window "$OPT_WINDOW" \
     --arg font "$OPT_FONT_SPEC" --argjson custom "$custom" '
-    {accent: $accent, cursor: $cursor, window: $window,
+    {accent: $accent, contrast: $contrast, cursor: $cursor, window: $window,
      font: (if $font == "" then null else $font end), custom: $custom}'
 }
 
@@ -198,6 +203,7 @@ cmd_install() {
   [[ "$(jq -r '.custom != null' <<<"$opts")" == true ]] && selected=custom
   ui_ok "Installed iglass profiles ($(palette_query '[.variants[].name] | join(", ")')$(
     [[ $selected == custom ]] && printf ', %s' "$(variant_profile_name custom)"))."
+  accessibility_hints "$OPT_VARIANT" "${OPT_CONTRAST:-standard}"
 
   if [[ $OPT_DEFAULT == 1 ]]; then
     default_guid=$(variant_guid "$selected")
@@ -263,7 +269,8 @@ cmd_status() {
   if profile_installed; then
     ui_ok "Installed $(state_get '.installedAt')"
     state_read | jq -r '.options // {} |
-      "  variant \(.variant // "?") · accent \(.accent // "?") · cursor \(.cursor // "?") · window \(.window // "?")",
+      "  variant \(.variant // "?") · accent \(.accent // "?") · contrast \(.contrast // "standard")",
+      "  cursor \(.cursor // "?") · window \(.window // "?")",
       "  font \(.font // "your own")",
       (if .custom then "  custom profile: \(.custom.overrides | to_entries | map("\(.key)=\(.value)") | join(", "))" else empty end)'
   else

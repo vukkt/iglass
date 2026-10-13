@@ -77,6 +77,18 @@ teardown() {
   assert_output_has "older than 3.5.0"
 }
 
+@test "install suggests settings that match macOS accessibility options" {
+  run "$IGLASS" install
+  [[ "$output" != *"Reduce transparency"* && "$output" != *"Increase contrast"* ]]
+  defaults write "$IGLASS_A11Y_DOMAIN" reduceTransparency -bool true
+  defaults write "$IGLASS_A11Y_DOMAIN" increaseContrast -bool true
+  run "$IGLASS" install
+  assert_output_has "--variant solid"
+  assert_output_has "--contrast high"
+  run "$IGLASS" install --variant solid --contrast high
+  [[ "$output" != *"Reduce transparency"* && "$output" != *"Increase contrast"* ]]
+}
+
 @test "status reflects what is installed" {
   run "$IGLASS" status
   assert_success_

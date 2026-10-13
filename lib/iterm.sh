@@ -65,7 +65,21 @@ JXA
   [[ "$result" == ok ]]
 }
 
-# True when macOS "Reduce transparency" (Accessibility › Display) is on.
+# macOS Accessibility › Display settings that iglass adapts to.
 reduce_transparency_on() {
-  [[ "$(defaults read com.apple.universalaccess reduceTransparency 2>/dev/null)" == 1 ]]
+  [[ "$(defaults read "$IGLASS_A11Y_DOMAIN" reduceTransparency 2>/dev/null)" == 1 ]]
+}
+
+increase_contrast_on() {
+  [[ "$(defaults read "$IGLASS_A11Y_DOMAIN" increaseContrast 2>/dev/null)" == 1 ]]
+}
+
+# Suggest the variant and contrast that match the user's accessibility settings.
+accessibility_hints() { # VARIANT CONTRAST
+  if reduce_transparency_on && [[ "$1" != solid ]]; then
+    ui_info "Reduce transparency is on in macOS; iglass Solid matches it: iglass install --variant solid"
+  fi
+  if increase_contrast_on && [[ "$2" != high ]]; then
+    ui_info "Increase contrast is on in macOS; try stronger colors: iglass install --contrast high"
+  fi
 }
