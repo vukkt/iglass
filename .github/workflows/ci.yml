@@ -13,7 +13,7 @@ jobs:
     # macOS 15+ ships /usr/bin/jq, plutil and defaults: the same tools iglass uses at runtime.
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install lint and test tools
         run: brew install shellcheck bats-core
