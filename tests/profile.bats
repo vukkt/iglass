@@ -13,7 +13,8 @@ export_to() { # FILE ARGS…
 
 # Every key iTerm2 keeps separately for light and dark mode (from iTermProfilePreferences.m).
 # A profile that leaves one out inherits it from the user's default profile, letting their old
-# theme leak into iglass.
+# theme leak into iglass. Not listed: "HDR Cursor Brightness", which has no effect because
+# iglass turns "HDR Cursor" off.
 MODE_KEYS='[
   "Foreground Color","Background Color","Bold Color","Link Color","Match Background Color",
   "Selection Color","Selected Text Color","Cursor Color","Cursor Text Color","IME Cursor Color",

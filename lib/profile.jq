@@ -35,7 +35,7 @@ def modal($mode; $variant):
       "Use Active Pane Border": false,
       "Smart Cursor Color": false,
       "Cursor Boost": 0,
-      "HDR Cursor": false,
+      "HDR Cursor": false, # so "HDR Cursor Brightness" has no effect and is left alone
       "Harmonize 256 Colors": false
     };
 

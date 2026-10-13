@@ -21,8 +21,9 @@ setup() {
 
 @test "the installed copy carries only what it needs at runtime" {
   "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
-  run ls "$PREFIX/share/iglass"
-  [[ "$output" == $'LICENSE\nbin\ndata\nlib' || "$output" == $'bin\ndata\nlib' ]]
+  # A fixed collation: some locales sort LICENSE after bin.
+  run env LC_ALL=C ls "$PREFIX/share/iglass"
+  [[ "$output" == $'LICENSE\nbin\ndata\nlib' ]]
 }
 
 @test "reinstalling replaces the previous copy cleanly" {

@@ -61,8 +61,21 @@ place and iglass refuses to write global settings.
 - Keys a profile leaves out are inherited from the user's default profile, so iglass sets only
   appearance keys. Keyboard maps, shell, working directory and font stay the user's own.
 - **One malformed file in the folder stops iTerm2 from loading every dynamic profile.**
-  iglass writes atomically (temporary file → `plutil -lint` → rename), and `iglass doctor`
-  lints every file in the folder.
+  iglass writes atomically (temporary file outside the folder → validate → rename), and
+  `iglass doctor` checks every file in the folder.
+- `plutil -lint` does **not** accept JSON. The validator is `plutil -convert xml1 -o /dev/null`,
+  which runs Apple's parser on JSON, XML and binary plists alike, and also rejects JSON `null`,
+  which a property list cannot hold.
+
+### Light and dark copies of settings
+
+iTerm2 keeps 45 profile keys separately for light and dark mode (`… (Light)`, `… (Dark)`),
+listed in `iTermProfilePreferences.m`. Besides the 31 colors, these include behavior keys such
+as `Minimum Contrast`, `Faint Text Alpha`, `Brighten Bold Text`, `Harmonize 256 Colors` and the
+`Use … Color` switches. Any of them a profile leaves out is inherited from the user's default
+profile, in that mode only. iglass sets 44 of them in all three forms; the test suite fails if
+one goes missing. The 45th, `HDR Cursor Brightness`, has no effect because iglass sets
+`HDR Cursor` to false.
 
 ## Restarting iTerm2 safely
 
@@ -70,6 +83,34 @@ The installer usually runs *inside* iTerm2, so it cannot quit iTerm2 and keep ru
 hands the apply step to launchd with `launchctl submit`. The job's parent is launchd (`ppid=1`),
 not iTerm2. launchd restarts submitted jobs that exit with failure, so the helper always exits 0
 and removes its own label when done.
+
+## Apple's Liquid Glass guidance
+
+From [Adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass):
+
+- *"This material forms a distinct functional layer for controls and navigation elements … to
+  help bring focus to the underlying content."* Terminal text is content, so translucency
+  behind it is a stylistic choice, not Apple's pattern. That is why Frosted (not Clear) is the
+  default, Tinted and Solid exist, and every variant is contrast-checked.
+- *"Define a custom color with light and dark variants, and an increased contrast option for
+  each variant."* → separate light/dark palettes and `--contrast high`.
+- *"Test … with accessibility settings that reduce transparency."* → the Solid variant, plus
+  hints when Reduce Transparency or Increase Contrast is on.
+- *"Give content room to breathe … larger row height and padding."* → `--app-settings` padding.
+
+## Contrast model
+
+A translucent window has no single background: it is the window color blended over whatever
+the desktop shows. The palette build checks colors against that blend, in three tiers:
+
+- **Tinted, Solid:** over pure black and pure white desktops. Readable over anything.
+- **Frosted:** over dark (`#333`) and light (`#CCC`) grey, standing in for typical blurred
+  wallpapers. At 34% transparency, no white text can reach 7:1 over a pure white desktop, so a
+  strict guarantee would mean washing every color out to pastel.
+- **Clear:** over mid-grey only. An aesthetic choice, labeled as such.
+
+The high-contrast palette starts from the finished standard colors, so no color can end up
+weaker than its standard counterpart (a test checks this).
 
 ## Fonts
 
