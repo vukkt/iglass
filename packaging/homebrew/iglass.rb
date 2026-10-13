@@ -1,9 +1,9 @@
-# Homebrew formula for iglass. Lives in the tap repository vukkt/homebrew-tap as Formula/iglass.rb.
+# Homebrew formula for iglass. Published in github.com/vukkt/homebrew-tap as Formula/iglass.rb; keep both in sync.
 class Iglass < Formula
   desc "Liquid Glass-inspired theme for iTerm2"
   homepage "https://github.com/vukkt/iglass"
   url "https://github.com/vukkt/iglass/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA256"
+  sha256 "23948db7ed595e5e3f69710395c29d188d651b7a5e049f0e1618dcb658068f9b"
   license "MIT"
 
   depends_on :macos
