@@ -6,7 +6,9 @@ class Iglass < Formula
   sha256 "2b03b2a11978a265f2104975c645f95a9d8ab736f2fb383bbda232af6e3bbee9"
   license "MIT"
 
-  depends_on :macos
+  on_linux do
+    depends_on "jq"
+  end
 
   def install
     libexec.install "bin", "lib", "data"
@@ -24,6 +26,6 @@ class Iglass < Formula
 
   test do
     assert_match version.to_s, shell_output("#{bin}/iglass --version")
-    assert_match "iglass Frosted", shell_output("#{bin}/iglass export")
+    assert_match "iglass Frosted", shell_output("#{bin}/iglass export --terminal iterm2")
   end
 end

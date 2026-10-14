@@ -1,0 +1,41 @@
+name: Bug report
+description: Something doesn't look or work right
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead. Screenshots help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `iglass doctor`
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: terminal
+    attributes:
+      label: Terminal
+      options:
+        - iTerm2 (macOS)
+        - Ghostty (macOS)
+        - Ghostty (Linux)
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: macOS version, or Linux distribution and desktop (KDE Plasma, GNOME, Hyprland, …)
+      placeholder: e.g. Fedora 44, KDE Plasma 6 (Wayland)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: iglass version
+      placeholder: output of iglass --version

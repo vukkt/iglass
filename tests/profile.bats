@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=macos
 # The generated profiles document: validity, completeness and option handling.
 
 load helpers

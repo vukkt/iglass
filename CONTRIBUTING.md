@@ -1,18 +1,24 @@
 # Contributing
 
-Thanks for helping. Bug reports with `iglass doctor` output, your macOS and iTerm2 versions,
-and a screenshot are the most useful thing you can send.
+Thanks for helping. Bug reports with `iglass doctor` output, your OS and terminal versions
+(on Linux, your desktop too: KDE, GNOME, …) and a screenshot are the most useful thing you can send.
 
 ## Setup
 
 ```sh
-brew install shellcheck bats-core
+brew install shellcheck bats-core              # macOS
+sudo apt install jq shellcheck bats python3    # Linux (or your distro's equivalents)
 make check
 ```
 
 `make check` runs shellcheck, verifies generated files are current, then runs the palette
 tests (Python standard library) and the bats suite. Tests are sandboxed: they use temporary
 folders, a scratch preferences file and stand-ins for iTerm2, so they never touch your setup.
+
+`tests/linux.bats` covers Linux and runs on both systems: it sets `IGLASS_PLATFORM=linux`,
+which switches iglass to its Linux code paths. The suites tagged `macos` need macOS tools
+(`plutil`, `defaults`), so `make test` skips them on Linux. CI runs both, and on Ubuntu also
+checks iglass end to end against the real Ghostty.
 
 ## Changing colors
 
@@ -29,7 +35,11 @@ change makes a target unreachable, the build stops and names the color.
 ## Code style
 
 - Bash 3.2 compatible (the version macOS ships): no associative arrays, `mapfile`, `${x,,}`.
-- No runtime dependencies beyond stock macOS 15+ (`jq`, `plutil`, `defaults`, `osascript`).
+- No runtime dependencies beyond stock macOS 15+ (`jq`, `plutil`, `defaults`, `osascript`);
+  on Linux, only `jq` (fontconfig and `gsettings` are used when present).
+- Anything that differs between macOS and Linux goes through [`lib/platform.sh`](lib/platform.sh)
+  (`is_macos`/`is_linux`, `file_mode`, `proc_running`, …). Don't call BSD- or GNU-only flags
+  directly: `stat -f`, for example, means something unrelated on Linux and still succeeds.
 - Anything written into iTerm2's dynamic profiles folder is validated first and written
   atomically. One unreadable file there disables every dynamic profile.
 - User-visible messages say what happened and what to do next.

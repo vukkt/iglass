@@ -12,6 +12,11 @@
 #   MOCK_QUIT_REFUSE=1           iTerm2 ignores the quit request
 #   MOCK_MISSING_FONTS="A B"     fonts that report as not installed
 #   MOCK_MACOS=14.6              macOS version reported by sw_vers
+#
+# Tests run as macOS (IGLASS_PLATFORM=macos) unless they call use_linux, which switches iglass
+# to its Linux code paths with a ghostty command on PATH instead of Ghostty.app:
+#   MOCK_FC_FONTS="A B"          PostScript names fontconfig (fc-list) knows, with family "Mock Family"
+#   MOCK_GNOME_HIGH_CONTRAST=1   GNOME's high-contrast setting is on
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 IGLASS="$REPO_ROOT/bin/iglass"
@@ -24,6 +29,7 @@ setup_sandbox() {
   : >"$MOCK_LOG"
 
   export NO_COLOR=1
+  export IGLASS_PLATFORM=macos
   export IGLASS_DYNPROFILES_DIR="$SANDBOX/profiles"
   export IGLASS_STATE_DIR="$SANDBOX/state"
   export IGLASS_PREFS_DOMAIN="$SANDBOX/prefs"
@@ -35,7 +41,8 @@ setup_sandbox() {
   unset TERM_PROGRAM MOCK_GHOSTTY_REJECT MOCK_GHOSTTY_NO_GLASS
   export IGLASS_APPLY_TIMEOUT=2
   export MOCK_DIR MOCK_LOG
-  unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS
+  unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS IGLASS_GHOSTTY_BIN
+  unset MOCK_FC_FONTS MOCK_GNOME_HIGH_CONTRAST XDG_STATE_HOME XDG_CURRENT_DESKTOP
 
   fake_iterm_version 3.7.4
   write_mocks
@@ -69,9 +76,36 @@ fake_ghostty() {
   <key>CFBundleShortVersionString</key><string>${1:-1.3.1}</string>
 </dict></plist>
 PLIST
-  cat >"$IGLASS_GHOSTTY_APP/Contents/MacOS/ghostty" <<'GHOSTTY'
+  write_fake_ghostty_bin "$IGLASS_GHOSTTY_APP/Contents/MacOS/ghostty" "${1:-1.3.1}"
+}
+
+# Switch iglass to Linux: Linux paths and behavior, a ghostty command instead of Ghostty.app
+# (pass "none" for no Ghostty), and an os-release file.
+use_linux() {
+  export IGLASS_PLATFORM=linux
+  export IGLASS_GHOSTTY_APP="$SANDBOX/no-ghostty.app"
+  export IGLASS_OS_RELEASE="$SANDBOX/os-release"
+  printf 'NAME="Fedora Linux"\nVERSION_ID=43\n' >"$IGLASS_OS_RELEASE"
+  if [[ "${1:-}" == none ]]; then
+    export IGLASS_GHOSTTY_BIN="$SANDBOX/no-ghostty"
+  else
+    export IGLASS_GHOSTTY_BIN="$SANDBOX/linux/ghostty"
+    mkdir -p "$SANDBOX/linux"
+    write_fake_ghostty_bin "$IGLASS_GHOSTTY_BIN" "${1:-1.3.1}"
+  fi
+}
+
+# write_fake_ghostty_bin PATH VERSION — a ghostty whose validator mimics Ghostty's.
+write_fake_ghostty_bin() {
+  cat >"$1" <<'GHOSTTY'
 #!/bin/bash
 echo "ghostty $*" >>"$MOCK_LOG"
+if [[ "$1" == --version ]]; then
+  echo "Ghostty @VERSION@"
+  echo
+  echo "Version"
+  exit 0
+fi
 [[ "$1" == +validate-config ]] || exit 0
 [[ -n "${MOCK_GHOSTTY_REJECT:-}" ]] && { echo "rejected by mock" >&2; exit 1; }
 dir="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
@@ -89,16 +123,40 @@ for t in $(tr ',' ' ' <<<"$theme"); do
 done
 exit 0
 GHOSTTY
-  chmod +x "$IGLASS_GHOSTTY_APP/Contents/MacOS/ghostty"
+  sed -i.bak "s/@VERSION@/$2/" "$1" && rm -f "$1.bak"
+  chmod +x "$1"
 }
 
 write_mocks() {
   cat >"$MOCK_DIR/bin/pgrep" <<'EOF'
 #!/bin/bash
-# Like the real pgrep when iglass runs inside the terminal it manages: without -a, the
-# terminal is one of pgrep's ancestors and is left out of the results.
-[[ " $* " == *" -a "* ]] || exit 1
-[[ -f "$MOCK_DIR/running.${*: -1}" ]] # pgrep -a -x NAME
+# Like the real macOS pgrep when iglass runs inside the terminal it manages: without -a, the
+# terminal is one of pgrep's ancestors and is left out of the results. Linux pgrep has no
+# such filter.
+[[ "$(uname -s)" == Linux || " $* " == *" -a "* ]] || exit 1
+[[ -f "$MOCK_DIR/running.${*: -1}" ]] # pgrep [-a] -x NAME
+EOF
+
+  # setsid -f CMD…: how iglass starts Ghostty windows on Linux.
+  cat >"$MOCK_DIR/bin/setsid" <<'EOF'
+#!/bin/bash
+[[ "$1" == -f ]] && shift
+echo "setsid $*" >>"$MOCK_LOG"
+EOF
+
+  # fc-list :postscriptname=NAME family
+  cat >"$MOCK_DIR/bin/fc-list" <<'EOF'
+#!/bin/bash
+name=${1#:postscriptname=}
+for f in ${MOCK_FC_FONTS:-}; do
+  [[ "$f" == "$name" ]] && echo "Mock Family,Mock Family Alias"
+done
+exit 0
+EOF
+
+  cat >"$MOCK_DIR/bin/gsettings" <<'EOF'
+#!/bin/bash
+[[ -n "${MOCK_GNOME_HIGH_CONTRAST:-}" ]] && echo true || echo false
 EOF
 
   cat >"$MOCK_DIR/bin/sw_vers" <<'EOF'

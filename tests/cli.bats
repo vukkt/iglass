@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=macos
 # Command-line interface: help, versions, option parsing and validation.
 
 load helpers
