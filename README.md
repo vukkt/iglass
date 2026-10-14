@@ -71,23 +71,24 @@ Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS acc
 
 iglass works with [Ghostty](https://ghostty.org) on Linux. You get the same contrast-checked
 palettes, the four variants, accents and light/dark switching. Liquid Glass itself is Apple's
-material, so on Linux the glass is transparency plus blur, and blur depends on your desktop.
+material, so on Linux the glass is transparency plus blur, and blur depends on your desktop:
 
-| Dark | Light |
-|---|---|
-| <img src="docs/screenshots/linux-kde-frosted.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma, dark"> | <img src="docs/screenshots/linux-kde-frosted-light.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma, light"> |
-
-<sub>iglass Frosted in Ghostty on Fedora 44 with KDE Plasma, which blurs the wallpaper behind the window.</sub>
-
-What you get depends on your desktop:
-
-| Desktop | Transparency | Blur | Light/dark switching |
+| Desktop | Blur behind the window | Default variant | Light/dark switching |
 |---|---|---|---|
-| KDE Plasma | ✓ | ✓ | ✓ |
-| GNOME | ✓ | — (GNOME doesn't offer blur to apps) | ✓ |
-| Others | ✓ | If the compositor supports it | If the desktop reports it |
+| KDE Plasma | ✓ | Frosted | ✓ |
+| Hyprland | ✓ (Hyprland's own blur) | Frosted | ✓ |
+| GNOME and others | — | Tinted | ✓ on GNOME; elsewhere if the desktop reports it |
 
-On GNOME, Tinted or Solid are the most readable choices, since there's no blur behind the text.
+Clear and Frosted rely on blur to keep text readable, so on a desktop without blur iglass
+installs **Tinted**, which is checked against pure black and white, and tells you why. You can
+still choose any variant with `--variant`.
+
+| | Dark | Light |
+|---|---|---|
+| **KDE Plasma** · Frosted | <img src="docs/screenshots/linux-kde-frosted.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma, dark"> | <img src="docs/screenshots/linux-kde-frosted-light.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma, light"> |
+| **GNOME** · Tinted | <img src="docs/screenshots/linux-gnome-tinted.png" alt="iglass Tinted in Ghostty on Fedora GNOME, dark"> | <img src="docs/screenshots/linux-gnome-tinted-light.png" alt="iglass Tinted in Ghostty on Fedora GNOME, light"> |
+
+<sub>Ghostty on Fedora 44. KDE Plasma blurs the wallpaper behind the window; GNOME shows it through.</sub>
 
 ## Install
 

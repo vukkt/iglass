@@ -3,13 +3,16 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [1.2.0] - Unreleased
+## [1.2.0] - 2026-10-14
 
 ### Added
 - **Linux support for Ghostty.** The same palettes, variants, accents and light/dark switching,
   with transparency and blur (blur where the desktop supports it, such as KDE Plasma). Liquid
   Glass stays macOS-only, so `--glass native` is refused on Linux.
 - `install.sh` and the Homebrew formula work on Linux; jq is the only extra requirement.
+- On desktops that don't blur behind windows (GNOME and most others), `install` defaults to
+  Tinted, which stays readable over anything, and warns if you pick Clear or Frosted.
+  KDE Plasma and Hyprland keep Frosted. `doctor` says whether your desktop blurs.
 - On Linux, fonts are checked with fontconfig, previews start Ghostty directly,
   `--window no-titlebar` hides the GTK title bar, and GNOME's high-contrast setting suggests
   `--contrast high`. State lives in `~/.local/state/iglass`.
