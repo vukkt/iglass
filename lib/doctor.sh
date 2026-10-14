@@ -154,7 +154,13 @@ _doctor_ghostty() {
     n=$((n + 1))
   fi
   if is_linux; then
-    ui_info "Glass on Linux is transparency plus blur; blur needs a desktop that supports it (KDE Plasma)"
+    if desktop_blurs; then
+      ui_ok "$(desktop_name) blurs behind translucent windows"
+    else
+      local desktop
+      desktop=$(desktop_name)
+      ui_info "${desktop:-This desktop} doesn't blur behind windows (KDE Plasma and Hyprland do); Tinted or Solid read best"
+    fi
   elif version_ge "$(macos_version)" 26 && ghostty_supports_native_glass; then
     ui_ok "Real Liquid Glass is available (macos-glass)"
   else

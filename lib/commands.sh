@@ -108,6 +108,7 @@ _validate_look_options() {
   # shellcheck disable=SC2207
   accents=($(palette_query '.accentOrder | join(" ")'))
 
+  _choose_linux_variant
   OPT_VARIANT=${OPT_VARIANT:-$(palette_query '.defaultVariant')}
   OPT_ACCENT=${OPT_ACCENT:-$(palette_query '.defaultAccent')}
   _one_of "$OPT_VARIANT" "${variants[@]}" ||
@@ -184,6 +185,21 @@ _validate_look_options() {
     OPT_FONT_SPEC="$name $size"
     OPT_FONT_FAMILY=$(font_family "$name")
     OPT_FONT_SIZE=$size
+  fi
+}
+
+# Clear and Frosted are contrast-checked assuming blur softens what's behind the window. On a
+# Linux desktop that doesn't blur, install defaults to Tinted and warns about the other two.
+_choose_linux_variant() {
+  is_linux && [[ "${IGLASS_COMMAND:-}" == install ]] && ! desktop_blurs || return 0
+  local desktop
+  desktop=$(desktop_name)
+  desktop=${desktop:-your desktop}
+  if [[ -z "$OPT_VARIANT" ]]; then
+    OPT_VARIANT=tinted
+    ui_info "$desktop doesn't blur behind windows, so iglass uses Tinted, which stays readable over anything. Pick another with --variant."
+  elif [[ "$OPT_VARIANT" == clear || "$OPT_VARIANT" == frosted ]]; then
+    ui_warn "$desktop doesn't blur behind windows, so whatever is behind the terminal will show through $OPT_VARIANT sharply. Tinted or Solid stay readable."
   fi
 }
 

@@ -12,6 +12,7 @@ setup() {
   AS="$IGLASS_GHOSTTY_APPSUPPORT_DIR"
   unset IGLASS_STATE_DIR
   export XDG_STATE_HOME="$SANDBOX/state-home"
+  export XDG_CURRENT_DESKTOP=KDE # blurs; see the GNOME tests for a desktop that doesn't
 }
 
 include_line() { printf 'config-file = ?"%s/iglass.ghostty"\n' "$XDG"; }
@@ -25,6 +26,42 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   [[ "$(include_count "$XDG/config.ghostty")" == 1 ]]
   [[ -f "$XDG_STATE_HOME/iglass/state.json" ]]
   [[ ! -e "$(profile_file)" ]]
+}
+
+@test "linux: on a desktop without blur, install defaults to Tinted and says why" {
+  XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install
+  assert_success_
+  assert_output_has "GNOME doesn't blur behind windows, so iglass uses Tinted"
+  assert_output_has "(transparency, no blur on this desktop, "
+  grep -qx 'theme = light:iglass-tinted-light,dark:iglass-tinted-dark' "$XDG/iglass.ghostty"
+  run jq -r '.ghostty.options.variant' "$XDG_STATE_HOME/iglass/state.json"
+  [[ "$output" == tinted ]]
+}
+
+@test "linux: choosing Clear or Frosted without blur works, with a warning" {
+  XDG_CURRENT_DESKTOP=ubuntu:GNOME run "$IGLASS" install --variant frosted
+  assert_success_
+  assert_output_has "ubuntu doesn't blur behind windows"
+  grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$XDG/iglass.ghostty"
+  XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install --variant solid
+  [[ "$output" != *"doesn't blur"* ]]
+}
+
+@test "linux: KDE Plasma and Hyprland keep Frosted as the default" {
+  for desktop in KDE Hyprland; do
+    XDG_CURRENT_DESKTOP=$desktop run "$IGLASS" install
+    [[ "$output" != *"doesn't blur"* ]]
+    grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$XDG/iglass.ghostty"
+  done
+}
+
+@test "linux: doctor says whether the desktop blurs" {
+  "$IGLASS" install
+  XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" doctor
+  assert_output_has "GNOME doesn't blur behind windows"
+  unset XDG_CURRENT_DESKTOP
+  run "$IGLASS" doctor
+  assert_output_has "This desktop doesn't blur"
 }
 
 @test "linux: uses blur, never Liquid Glass" {
@@ -184,7 +221,7 @@ EOF
   run "$IGLASS" doctor
   assert_success_
   assert_output_has "Fedora Linux 43"
-  assert_output_has "KDE Plasma"
+  assert_output_has "KDE blurs behind translucent windows"
   assert_output_has "Included from $XDG/config.ghostty"
   [[ "$output" != *"iTerm2"* && "$output" != *"macOS"* ]]
 }

@@ -295,6 +295,7 @@ ghostty_install() {
   local opts=$1 work themes target f created=false verb=Installed glass
   [[ -n "$(state_get '.ghostty.installedAt')" ]] && verb=Updated
   glass=$(jq -r 'if .glass == "native" then "real Liquid Glass" else "blur" end' <<<"$opts")
+  if is_linux && ! desktop_blurs; then glass="transparency, no blur on this desktop"; fi
   mkdir -p "$IGLASS_STATE_DIR"
   work=$(mktemp -d "$IGLASS_STATE_DIR/.ghostty.XXXXXX") || die "Could not create a temporary folder."
   ghostty_export_dir "$opts" "$work"

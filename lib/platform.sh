@@ -66,6 +66,22 @@ detach() {
   fi
 }
 
+# The desktop's name, e.g. KDE or GNOME (from XDG_CURRENT_DESKTOP, which may list several).
+desktop_name() {
+  local d=${XDG_CURRENT_DESKTOP:-}
+  printf '%s\n' "${d%%:*}"
+}
+
+# True when the Linux desktop blurs what's behind translucent windows: KDE Plasma (KWin) does
+# when Ghostty asks, and Hyprland blurs translucent windows itself. GNOME and most others don't,
+# so the background shows through sharply and only Tinted and Solid stay readable over anything.
+desktop_blurs() {
+  case ":${XDG_CURRENT_DESKTOP:-}:" in
+    *:KDE:* | *:Hyprland:*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # How to install a package on this system, for error messages.
 install_hint() { # PACKAGE
   if is_macos; then
