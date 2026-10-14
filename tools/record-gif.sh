@@ -31,8 +31,9 @@ cp -p "$state_dir/state.json" "$work/saved-state.json" 2>/dev/null || true
 cleanup() {
   local id
   for id in "$demo_window" "$backdrop_window"; do
-    [[ -n "$id" ]] && osascript -e "tell application id \"com.googlecode.iterm2\" to close (window id $id)" \
-      >/dev/null 2>&1 || true
+    if [[ -n "$id" ]]; then
+      osascript -e "tell application id \"com.googlecode.iterm2\" to close (window id $id)" >/dev/null 2>&1 || true
+    fi
   done
   rm -f "$backdrop_profile"
   if [[ -f "$work/saved-profile.json" ]]; then
