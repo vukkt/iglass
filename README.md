@@ -27,7 +27,8 @@ terminal, carefully:
 
 - **Real Liquid Glass in Ghostty** (macOS 26+): Apple's own glass material, not an imitation.
 - **The closest iTerm2 allows**: transparency, blur and a palette designed to sit on top of them.
-- **Linux too**: the same palettes in Ghostty on Linux, with transparency and blur.
+- **Linux too**: the same palettes in Ghostty on Linux, with transparency, and blur where your
+  desktop provides it.
 - **Four glass levels**, mirroring Apple's own options: Clear, Frosted, Tinted and Solid.
 - **Follows light and dark mode** automatically, with a separate palette for each.
 - **Apple's system colors** and macOS accent colors, adjusted only where contrast requires it.
@@ -61,9 +62,11 @@ terminal, carefully:
 | Variant | Feels like | Transparency | Ghostty glass | Readable over |
 |---|---|---|---|---|
 | **Clear** | Liquid Glass *Clear* | 50% | `macos-glass-clear` | Mid-tone wallpapers (aesthetic choice) |
-| **Frosted** · default | Liquid Glass *Regular* | 34% | `macos-glass-regular` | Typical wallpapers |
+| **Frosted** · default¹ | Liquid Glass *Regular* | 34% | `macos-glass-regular` | Typical wallpapers |
 | **Tinted** | macOS *Tinted* mode | 18% | `macos-glass-regular` | Any wallpaper |
 | **Solid** | Reduce Transparency | 0% | none | Any wallpaper |
+
+<sub>¹ On Linux desktops without blur the default is Tinted; see [Linux](#linux).</sub>
 
 Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS accent colors).
 
@@ -76,7 +79,7 @@ material, so on Linux the glass is transparency plus blur, and blur depends on y
 | Desktop | Blur behind the window | Default variant | Light/dark switching |
 |---|---|---|---|
 | KDE Plasma | ✓ | Frosted | ✓ |
-| Hyprland | ✓ (Hyprland's own blur) | Frosted | ✓ |
+| Hyprland | ✓ (Hyprland's own blur) | Frosted | If the desktop reports it |
 | GNOME and others | — | Tinted | ✓ on GNOME; elsewhere if the desktop reports it |
 
 Clear and Frosted rely on blur to keep text readable, so on a desktop without blur iglass
@@ -122,8 +125,9 @@ iglass install
 ```
 
 `iglass install` sets up the terminal you run it in (on Linux, always Ghostty). Use
-`--terminal iterm2`, `ghostty` or `all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles › iglass
-Frosted**. In Ghostty, quit and reopen it (Ghostty reads transparency only at launch).
+`--terminal iterm2`, `ghostty` or `all` to choose. In iTerm2, open a window with
+`iglass preview` or pick **Profiles › iglass Frosted**. In Ghostty, quit and reopen it
+(Ghostty reads transparency only at launch).
 
 <details>
 <summary>Without the CLI</summary>
@@ -226,8 +230,9 @@ anything touches your config. It asks Ghostty whether it supports `macos-glass` 
 guessing from version numbers.
 
 The CLI is plain bash plus the `jq`, `plutil` and `defaults` that ship with macOS, so there is
-nothing else to install on a Mac. On Linux it needs `jq`, and uses fontconfig to check fonts. More detail, including what was verified in iTerm2's and Ghostty's
-behavior: [docs/research-notes.md](docs/research-notes.md).
+nothing else to install on a Mac. On Linux it needs `jq`, and uses fontconfig to check fonts.
+More detail, including what was verified in iTerm2's and Ghostty's behavior:
+[docs/research-notes.md](docs/research-notes.md).
 
 ## FAQ
 
@@ -250,8 +255,8 @@ your desktop (see [Linux](#linux)).
 ### Isn't glass behind text against Apple's own advice?
 
 Partly. Apple reserves glass for controls and navigation and keeps content clear. Terminal text
-*is* content, which is why Frosted is the default, Tinted and Solid exist, and every variant is
-contrast-checked. Choose the level that suits you; Tinted is the most Apple-like for long work.
+*is* content, which is why Frosted is the default (Tinted on Linux desktops without blur),
+Tinted and Solid exist, and every variant is contrast-checked. Choose the level that suits you; Tinted is the most Apple-like for long work.
 
 ### Ghostty didn't change.
 

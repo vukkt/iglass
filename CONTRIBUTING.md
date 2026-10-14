@@ -46,7 +46,12 @@ change makes a target unreachable, the build stops and names the color.
 
 ## Releasing
 
-1. Update `IGLASS_VERSION` in `bin/iglass` and `CHANGELOG.md`.
-2. `make check`, commit, tag `vX.Y.Z`, push the tag, publish the GitHub release.
-3. Update `url` and `sha256` in the Homebrew formula
-   (`curl -fsSL <tarball url> | shasum -a 256`) and push it to the tap.
+`main` is protected: changes land through pull requests once CI passes on macOS and Linux.
+
+1. In a pull request: update `IGLASS_VERSION` in `bin/iglass`, `CHANGELOG.md`, and
+   `make themes`. Merge it when CI is green.
+2. Tag the merge commit `vX.Y.Z`, push the tag, publish the GitHub release.
+3. Update `url` and `sha256` in the tap's formula
+   (`curl -fsSL <tarball url> | shasum -a 256`), run `brew audit --strict --online iglass`,
+   and push it to the tap. Mirror the same change into `packaging/homebrew/iglass.rb` with the
+   next pull request.

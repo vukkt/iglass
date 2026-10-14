@@ -1,7 +1,8 @@
 # Research notes
 
 What we verified before writing code, and why iglass is built the way it is.
-Verified on macOS 27.0.1 with iTerm2 3.7.4 and Ghostty 1.3.1 (October 2026).
+Verified on macOS 27.0.1 with iTerm2 3.7.4 and Ghostty 1.3.1, and on Linux with Ghostty 1.3.1
+on Fedora 44 (KDE Plasma and GNOME, aarch64) and Ubuntu 24.04 (October 2026).
 
 ## Can iTerm2 use real Liquid Glass?
 
@@ -145,11 +146,39 @@ default. Many users rely on Nerd Fonts for prompt icons, and replacing the font 
 `--font` is opt-in. Font availability is checked through `NSFont` with JavaScript for Automation.
 
 For Ghostty, `--font` takes the same PostScript name and iglass looks up the family name
-Ghostty needs through `NSFont`.
+Ghostty needs through `NSFont`, or through fontconfig (`fc-list :postscriptname=NAME family`)
+on Linux.
+
+## Linux
+
+- **Ghostty on Linux reads only `$XDG_CONFIG_HOME/ghostty`** (`config.ghostty`, then `config`);
+  there is no Application Support location. The `ghostty` command reports its version on the
+  first line of `ghostty --version` (distribution builds append a suffix, e.g. `1.3.1-4.fc44`).
+- **Blur depends on the desktop.** KDE Plasma's KWin blurs behind Ghostty when
+  `background-blur` is set (verified, Wayland). GNOME doesn't blur behind app windows, so the
+  background shows through sharply (verified). Clear and Frosted are contrast-checked assuming
+  blur, so on desktops other than KDE Plasma and Hyprland (which blurs translucent windows
+  itself) iglass defaults to Tinted, which is checked against pure black and white.
+- **Light/dark switching works live** on both KDE Plasma (color scheme) and GNOME
+  (`color-scheme` setting): Ghostty follows the desktop through `theme = light:…,dark:…`.
+- **`gtk-titlebar = false`** hides the title bar on Linux; Ghostty's validator accepts it.
+- **`awk` differs between systems.** Fedora and Arch use GNU awk, where `include` is a reserved
+  word; Ubuntu uses mawk and macOS BSD awk, where it isn't. Using it as a variable name made
+  uninstall write an empty config under gawk. CI now runs with gawk, and iglass never rewrites
+  a config when the awk step fails.
+- **Tool flags differ.** GNU `stat -f` means "file system status" and succeeds with unrelated
+  output, so iglass picks `stat -f %Lp` or `stat -c %a` by OS rather than trying one then the
+  other. Linux `pgrep` doesn't hide its own ancestors, and its `-a` means "print the command
+  line". `lib/platform.sh` holds these differences.
+- **Ghostty needs OpenGL 4.3.** In a virtual machine whose GPU offers less, Ghostty can't create
+  a GL context; `LIBGL_ALWAYS_SOFTWARE=1 ghostty` (Mesa's software renderer) works for testing.
+- Ghostty isn't distributed on Flathub. Linux installs (distribution packages, the Snap, Nix,
+  source builds) provide a `ghostty` command that reads `~/.config/ghostty`.
 
 ## Screenshots
 
 Translucent windows show whatever is behind them, including other windows' text. Screenshots
 and the demo GIF are taken over a generated backdrop (`tools/backdrop.py`) shown in a temporary,
-opaque iTerm2 window, so they are reproducible and never capture anything personal. In iTerm2
+opaque iTerm2 window, so they are reproducible and never capture anything personal. The Linux
+screenshots were taken in Fedora virtual machines, capturing only the VM's window. In iTerm2
 profiles, `Blend: 1` shows a background image at full strength and `0` hides it (verified).
