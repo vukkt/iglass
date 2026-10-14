@@ -57,7 +57,7 @@ function run(argv) {
   text("A Liquid Glass theme", 68, 316, $.NSFont.systemFontOfSizeWeight(36, $.NSFontWeightSemibold), white);
   text("for iTerm2 and Ghostty", 68, 272, $.NSFont.systemFontOfSizeWeight(36, $.NSFontWeightSemibold), white);
   text("Real Liquid Glass in Ghostty · Apple system colors", 68, 214, $.NSFont.systemFontOfSizeWeight(21, $.NSFontWeightRegular), soft);
-  text("Contrast-checked · light & dark · fully reversible", 68, 184, $.NSFont.systemFontOfSizeWeight(21, $.NSFontWeightRegular), soft);
+  text("Contrast-checked · light & dark · macOS & Linux", 68, 184, $.NSFont.systemFontOfSizeWeight(21, $.NSFontWeightRegular), soft);
   $.NSGraphicsContext.restoreGraphicsState;
 
   // Install command in a glass pill.
