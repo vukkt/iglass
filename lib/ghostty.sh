@@ -3,7 +3,7 @@
 #
 # Ghostty reads, in order (later files win):
 #   $XDG_CONFIG_HOME/ghostty/config.ghostty, …/config,
-#   ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty, …/config
+#   ~/Library/Application Support/com.mitchellh.ghostty/config.ghostty, …/config  (macOS only)
 # iglass writes its themes to $XDG_CONFIG_HOME/ghostty/themes/iglass-<variant>-<mode>, its settings
 # to $XDG_CONFIG_HOME/ghostty/iglass.ghostty, and adds two lines (a comment and an optional
 # `config-file` include) to the config file Ghostty loads last, so iglass takes effect there.
@@ -24,7 +24,9 @@ ghostty_appsupport_dir() {
 ghostty_themes_dir() { printf '%s/themes\n' "$(ghostty_xdg_dir)"; }
 ghostty_iglass_file() { printf '%s/iglass.ghostty\n' "$(ghostty_xdg_dir)"; }
 
+# Print the path of Ghostty.app (macOS only).
 ghostty_app_path() {
+  is_macos || return 0
   if [[ -n "${IGLASS_GHOSTTY_APP:-}" ]]; then
     [[ -d "$IGLASS_GHOSTTY_APP" ]] && printf '%s\n' "$IGLASS_GHOSTTY_APP"
     return 0
@@ -42,29 +44,50 @@ ghostty_app_path() {
 }
 
 ghostty_version() {
-  local app
+  local app bin
+  if is_linux; then
+    bin=$(ghostty_bin)
+    [[ -n "$bin" ]] || return 0
+    "$bin" --version 2>/dev/null | sed -n '1s/^Ghostty \([0-9][0-9.]*\).*/\1/p'
+    return 0
+  fi
   app=$(ghostty_app_path)
   [[ -n "$app" ]] || return 0
   plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist" 2>/dev/null || true
 }
 
+# Print the path of the ghostty executable, or nothing if Ghostty is not installed.
 ghostty_bin() {
   local app
+  if is_linux; then
+    if [[ -n "${IGLASS_GHOSTTY_BIN:-}" ]]; then
+      [[ -x "$IGLASS_GHOSTTY_BIN" ]] && printf '%s\n' "$IGLASS_GHOSTTY_BIN"
+    else
+      command -v ghostty 2>/dev/null
+    fi
+    return 0
+  fi
   app=$(ghostty_app_path)
   [[ -n "$app" && -x "$app/Contents/MacOS/ghostty" ]] && printf '%s\n' "$app/Contents/MacOS/ghostty"
   return 0
 }
 
+ghostty_present() {
+  [[ -n "$(ghostty_bin)" ]] || [[ -n "$(ghostty_app_path)" ]]
+}
+
 ghostty_running() {
-  pgrep -a -x ghostty >/dev/null 2>&1
+  proc_running ghostty
 }
 
 # Config files Ghostty loads, in load order (later wins).
 ghostty_config_candidates() {
   local xdg as
   xdg=$(ghostty_xdg_dir)
+  printf '%s\n' "$xdg/config.ghostty" "$xdg/config"
+  is_macos || return 0
   as=$(ghostty_appsupport_dir)
-  printf '%s\n' "$xdg/config.ghostty" "$xdg/config" "$as/config.ghostty" "$as/config"
+  printf '%s\n' "$as/config.ghostty" "$as/config"
 }
 
 # The config file iglass should include itself from: the last one Ghostty loads. When none
@@ -109,8 +132,14 @@ ghostty_validate() {
   fi
 }
 
-# Decide between Ghostty's native Liquid Glass and a classic blur radius.
+# Decide between Ghostty's native Liquid Glass and a classic blur radius. Liquid Glass is a
+# macOS material, so Linux always gets blur.
 ghostty_glass_mode() { # REQUESTED(auto|native|blur)
+  if is_linux; then
+    # --glass native only gets here from export (files for a Mac); see _validate_look_options.
+    if [[ "$1" == native ]]; then printf 'native\n'; else printf 'blur\n'; fi
+    return
+  fi
   case "$1" in
     native | blur) printf '%s\n' "$1" ;;
     *)
@@ -159,7 +188,9 @@ ghostty_settings() {
       + (if $o.cursor == "keep" then []
          else ["cursor-style = \({"bar": "bar", "box": "block", "underline": "underline"}[$o.cursor])",
                "cursor-style-blink = true"] end)
-      + (if $o.window == "no-titlebar" then ["macos-titlebar-style = hidden"] else [] end)
+      + (if $o.window == "no-titlebar"
+         then [if $o.platform == "linux" then "gtk-titlebar = false" else "macos-titlebar-style = hidden" end]
+         else [] end)
       + (if $o.fontFamily then ["font-family = \"\($o.fontFamily)\"", "font-size = \($o.fontSize)"] else [] end)
     | join("\n")'
 }
@@ -188,8 +219,8 @@ _ghostty_rewrite() { # FILE CONTENT_FILE
   tmp=$(mktemp "$dir/.iglass-config.XXXXXX") || return 1
   cat "$content" >"$tmp" || { rm -f "$tmp"; return 1; }
   if [[ -f "$real" ]]; then
-    mode=$(stat -f %Lp "$real" 2>/dev/null || echo 644)
-    chmod "$mode" "$tmp"
+    mode=$(file_mode "$real")
+    chmod "${mode:-644}" "$tmp"
   else
     chmod 644 "$tmp"
   fi
@@ -349,7 +380,13 @@ ghostty_uninstall() {
 
 # Open a new Ghostty window showing a variant.
 ghostty_preview() { # VARIANT
-  local app
+  local app bin
+  if is_linux; then
+    bin=$(ghostty_bin)
+    [[ -n "$bin" ]] || die "Ghostty is not installed." "Get it from https://ghostty.org/download"
+    detach "$bin" "--theme=light:iglass-$1-light,dark:iglass-$1-dark"
+    return
+  fi
   app=$(ghostty_app_path)
   [[ -n "$app" ]] || die "Ghostty is not installed." "Get it from https://ghostty.org"
   open -na "$app" --args "--theme=light:iglass-$1-light,dark:iglass-$1-dark"

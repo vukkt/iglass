@@ -2,12 +2,13 @@
 
 # iglass
 
-**A Liquid Glass theme for iTerm2 and Ghostty.**
+**A Liquid Glass theme for iTerm2 and Ghostty, on macOS and Linux.**
 Translucent, built from Apple's system colors, and contrast-checked so it stays readable.
-In Ghostty it uses Apple's real Liquid Glass material.
+In Ghostty on macOS it uses Apple's real Liquid Glass material.
 
 [![CI](https://github.com/vukkt/iglass/actions/workflows/ci.yml/badge.svg)](https://github.com/vukkt/iglass/actions/workflows/ci.yml)
 ![macOS 15+](https://img.shields.io/badge/macOS-15%2B-black)
+![Linux](https://img.shields.io/badge/Linux-Ghostty-black)
 ![iTerm2 3.5+](https://img.shields.io/badge/iTerm2-3.5%2B-black)
 ![Ghostty 1.0+](https://img.shields.io/badge/Ghostty-1.0%2B-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
@@ -26,12 +27,14 @@ terminal, carefully:
 
 - **Real Liquid Glass in Ghostty** (macOS 26+): Apple's own glass material, not an imitation.
 - **The closest iTerm2 allows**: transparency, blur and a palette designed to sit on top of them.
+- **Linux too**: the same palettes in Ghostty on Linux, with transparency and blur.
 - **Four glass levels**, mirroring Apple's own options: Clear, Frosted, Tinted and Solid.
 - **Follows light and dark mode** automatically, with a separate palette for each.
 - **Apple's system colors** and macOS accent colors, adjusted only where contrast requires it.
 - **Contrast-checked.** Every color is verified against the window *as it looks over your
   desktop*, not just against a flat background. [See the report.](docs/contrast-report.md)
-- **High-contrast option** and hints for macOS Reduce Transparency / Increase Contrast.
+- **High-contrast option** and hints for macOS Reduce Transparency / Increase Contrast (and
+  GNOME's high contrast on Linux).
 - **Keeps your setup.** Only the look changes: your font, keyboard shortcuts, shell and
   directories stay as they are.
 - **Safe and reversible.** Everything iglass changes is backed up and undone exactly on
@@ -64,12 +67,30 @@ terminal, carefully:
 
 Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS accent colors).
 
+## Linux
+
+iglass works with [Ghostty](https://ghostty.org) on Linux. You get the same contrast-checked
+palettes, the four variants, accents and light/dark switching. Liquid Glass itself is Apple's
+material, so on Linux the glass is transparency plus blur, and blur depends on your desktop:
+
+| Desktop | Transparency | Blur | Light/dark switching |
+|---|---|---|---|
+| KDE Plasma | ✓ | ✓ | ✓ |
+| GNOME | ✓ | — (GNOME doesn't offer blur to apps) | ✓ |
+| Others | ✓ | If the compositor supports it | If the desktop reports it |
+
+On GNOME, Tinted or Solid are the most readable choices, since there's no blur behind the text.
+
 ## Install
 
-**Requirements:** macOS 15 or later, and [iTerm2](https://iterm2.com) 3.5+ or
-[Ghostty](https://ghostty.org) 1.0+. Real Liquid Glass needs macOS 26+ and a recent Ghostty.
+**Requirements**
+- **macOS:** macOS 15 or later, and [iTerm2](https://iterm2.com) 3.5+ or
+  [Ghostty](https://ghostty.org) 1.0+. Real Liquid Glass needs macOS 26+ and a recent Ghostty.
+- **Linux:** [Ghostty](https://ghostty.org/download) 1.0+ with the `ghostty` command on your
+  PATH, plus `bash`, `curl` and `jq` (`sudo apt install jq`, `sudo dnf install jq`,
+  `sudo pacman -S jq`).
 
-With Homebrew:
+With Homebrew (macOS or Linux):
 
 ```sh
 brew install vukkt/tap/iglass
@@ -91,8 +112,8 @@ cd iglass && ./install.sh --local
 iglass install
 ```
 
-`iglass install` sets up the terminal you run it in. Use `--terminal iterm2`, `ghostty` or
-`all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles › iglass
+`iglass install` sets up the terminal you run it in (on Linux, always Ghostty). Use
+`--terminal iterm2`, `ghostty` or `all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles › iglass
 Frosted**. In Ghostty, quit and reopen it (Ghostty reads transparency only at launch).
 
 <details>
@@ -110,6 +131,9 @@ Color Presets › Import), but they carry colors only, not the glass settings.
 theme = light:iglass-frosted-light,dark:iglass-frosted-dark
 ```
 
+These files use macOS's real Liquid Glass. On Linux, use the CLI, or make your own with
+`iglass export --terminal ghostty --glass blur --dir ./iglass-ghostty`.
+
 </details>
 
 ## Usage
@@ -119,8 +143,8 @@ iglass install                          # all four variants, blue accent
 iglass install --accent purple          # pick an accent
 iglass install --contrast high          # stronger colors
 iglass install --terminal all           # iTerm2 and Ghostty
-iglass install --app-settings           # iTerm2: native title bar + roomier padding (restarts iTerm2)
-iglass install --variant tinted --default   # iTerm2: make a variant your default profile
+iglass install --app-settings           # iTerm2 (macOS): native title bar + roomier padding (restarts iTerm2)
+iglass install --variant tinted --default   # iTerm2 (macOS): make a variant your default profile
 
 iglass preview --variant clear          # open a window to try a variant
 iglass list                             # variants and accents
@@ -136,7 +160,7 @@ iglass install --opacity 0.8 --blur 18      # adds an "iglass Custom" profile / 
 iglass install --cursor box                  # bar (default), box, underline, keep
 iglass install --window no-titlebar          # native (default), no-titlebar, keep
 iglass install --font sf-mono                # keep (default), sf-mono, or "PostScriptName 14"
-iglass install --glass blur                  # Ghostty: classic blur instead of real glass
+iglass install --glass blur                  # Ghostty on macOS: classic blur instead of real glass
 iglass export --accent green > my.json       # print the iTerm2 profiles file instead
 ```
 
@@ -150,6 +174,8 @@ Opacity below the readable minimum (0.66) asks for `--force`.
 - Two lines, after a blank line, at the end of your Ghostty config (the one Ghostty loads
   last): a comment and an optional `config-file` include. Your config is backed up first,
   symlinked dotfiles stay symlinks, and `iglass uninstall` restores the file exactly.
+- iglass's own record of what it changed, and the backup of your config, live in
+  `~/Library/Application Support/iglass` on macOS and `~/.local/state/iglass` on Linux.
 
 ### App-wide settings (iTerm2)
 
@@ -191,7 +217,7 @@ anything touches your config. It asks Ghostty whether it supports `macos-glass` 
 guessing from version numbers.
 
 The CLI is plain bash plus the `jq`, `plutil` and `defaults` that ship with macOS, so there is
-nothing else to install. More detail, including what was verified in iTerm2's and Ghostty's
+nothing else to install on a Mac. On Linux it needs `jq`, and uses fontconfig to check fonts. More detail, including what was verified in iTerm2's and Ghostty's
 behavior: [docs/research-notes.md](docs/research-notes.md).
 
 ## FAQ
@@ -205,6 +231,12 @@ behavior: [docs/research-notes.md](docs/research-notes.md).
 terminal windows: a [pull request adding it](https://github.com/gnachman/iTerm2/pull/767) was
 closed because glass breaks window resizing in a terminal. iglass gets as close as iTerm2
 allows with transparency, blur and a matching palette, and will use real glass if iTerm2 adds it.
+
+### Is it Liquid Glass on Linux?
+
+No. Liquid Glass is Apple's material and only exists on macOS. On Linux, iglass uses the same
+palettes with transparency and blur, so it looks glassy and stays readable. Blur depends on
+your desktop (see [Linux](#linux)).
 
 ### Isn't glass behind text against Apple's own advice?
 

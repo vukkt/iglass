@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  macos:
     # macOS 15+ ships /usr/bin/jq, plutil and defaults: the same tools iglass uses at runtime.
     runs-on: macos-15
     steps:
@@ -35,3 +35,63 @@ jobs:
 
       - name: Tests
         run: make test
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install lint and test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck bats
+
+      # Ghostty has no official Ubuntu package; the Snap is the easiest way to get the real
+      # validator. If it can't be installed, the steps that need it say so and are skipped.
+      - name: Install Ghostty
+        id: ghostty
+        continue-on-error: true
+        run: |
+          sudo snap install ghostty --classic
+          ghostty --version
+
+      - name: Tool versions
+        run: |
+          cat /etc/os-release | head -2
+          bash --version | head -1
+          jq --version
+          python3 --version
+          shellcheck --version | head -2
+          bats --version
+
+      - name: Lint
+        run: make lint
+
+      - name: Generated files are up to date
+        run: make check-generated
+
+      - name: Tests
+        run: make test
+
+      - name: End to end with the real Ghostty
+        if: steps.ghostty.outcome == 'success'
+        run: |
+          export HOME="$RUNNER_TEMP/home"
+          unset XDG_CONFIG_HOME XDG_STATE_HOME
+          mkdir -p "$HOME/.config/ghostty"
+          printf 'font-size = 13\n# mine' >"$HOME/.config/ghostty/config"
+          cp "$HOME/.config/ghostty/config" "$RUNNER_TEMP/original"
+          ./install.sh --local
+          iglass=$HOME/.local/bin/iglass
+          "$iglass" install --variant clear --accent purple --window no-titlebar
+          grep -qxF "config-file = ?\"$HOME/.config/ghostty/iglass.ghostty\"" "$HOME/.config/ghostty/config"
+          ghostty +validate-config
+          "$iglass" doctor
+          "$iglass" status
+          "$iglass" uninstall
+          cmp "$HOME/.config/ghostty/config" "$RUNNER_TEMP/original"
+          echo "Config restored byte for byte."
+
+      - name: Report a skipped Ghostty check
+        if: steps.ghostty.outcome != 'success'
+        run: echo "::warning::Ghostty could not be installed; the real-Ghostty checks were skipped."

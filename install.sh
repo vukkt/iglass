@@ -34,17 +34,29 @@ bin="$prefix/bin"
 say() { printf '%s\n' "$*"; }
 fail() { printf 'install.sh: %s\n' "$*" >&2; exit 1; }
 
+case "$(uname -s)" in
+  Darwin) os=macos ;;
+  Linux) os=linux ;;
+  *) fail "iglass supports macOS and Linux." ;;
+esac
+
 if [[ $action == uninstall ]]; then
   if [[ -L "$bin/iglass" ]]; then rm -f "$bin/iglass"; fi
   rm -rf "$share"
   say "Removed the iglass command."
-  say "If the theme is still installed, its profiles stay until you delete"
-  say "$HOME/Library/Application Support/iTerm2/DynamicProfiles/iglass.json"
+  say "If the theme is still installed, it stays until you delete its files:"
+  if [[ $os == macos ]]; then
+    say "  $HOME/Library/Application Support/iTerm2/DynamicProfiles/iglass.json"
+  fi
+  say "  ${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/iglass.ghostty and themes/iglass-*"
   exit 0
 fi
 
-[[ "$(uname -s)" == Darwin ]] || fail "iglass is for macOS."
-command -v jq >/dev/null 2>&1 || fail "jq not found. iglass needs macOS 15 or later (it includes /usr/bin/jq)."
+if ! command -v jq >/dev/null 2>&1; then
+  [[ $os == macos ]] && fail "jq not found. iglass needs macOS 15 or later (it includes /usr/bin/jq)."
+  fail "iglass needs jq. Install it with your package manager, e.g. sudo apt install jq (or dnf, pacman, zypper)."
+fi
+command -v curl >/dev/null 2>&1 || [[ -n "$local_src" ]] || fail "curl not found."
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -82,8 +94,18 @@ say "Installed $("$bin/iglass" --version) to $share"
 case ":$PATH:" in
   *":$bin:"*) say "Next: iglass install" ;;
   *)
-    say "Add $bin to your PATH, e.g. for zsh:"
-    say "  echo 'export PATH=\"$bin:\$PATH\"' >> ~/.zshrc && source ~/.zshrc"
+    case "${SHELL:-}" in
+      */bash) rc=.bashrc ;;
+      */fish) rc="" ;;
+      *) rc=.zshrc ;;
+    esac
+    if [[ -n "$rc" ]]; then
+      say "Add $bin to your PATH, e.g.:"
+      say "  echo 'export PATH=\"$bin:\$PATH\"' >> ~/$rc && source ~/$rc"
+    else
+      say "Add $bin to your PATH:"
+      say "  fish_add_path $bin"
+    fi
     say "Then: iglass install"
     ;;
 esac

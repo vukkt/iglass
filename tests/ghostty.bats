@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=macos
 # shellcheck disable=SC2030,SC2031  # per-test exports are meant to stay inside each test
 # Ghostty support: theme files, the include line in the user's config, glass detection.
 

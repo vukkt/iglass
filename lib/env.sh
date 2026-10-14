@@ -7,7 +7,11 @@
 
 IGLASS_PALETTE="${IGLASS_PALETTE:-$IGLASS_ROOT/data/palette.json}"
 IGLASS_DYNPROFILES_DIR="${IGLASS_DYNPROFILES_DIR:-$HOME/Library/Application Support/iTerm2/DynamicProfiles}"
-IGLASS_STATE_DIR="${IGLASS_STATE_DIR:-$HOME/Library/Application Support/iglass}"
+if is_macos; then
+  IGLASS_STATE_DIR="${IGLASS_STATE_DIR:-$HOME/Library/Application Support/iglass}"
+else
+  IGLASS_STATE_DIR="${IGLASS_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/iglass}"
+fi
 IGLASS_PREFS_DOMAIN="${IGLASS_PREFS_DOMAIN:-com.googlecode.iterm2}"
 IGLASS_A11Y_DOMAIN="${IGLASS_A11Y_DOMAIN:-com.apple.universalaccess}"
 IGLASS_ITERM_BUNDLE_ID="com.googlecode.iterm2"
@@ -39,8 +43,11 @@ version_ge() {
 }
 
 require_jq() {
-  command -v jq >/dev/null 2>&1 ||
+  command -v jq >/dev/null 2>&1 && return 0
+  if is_macos; then
     die "jq is not available." "iglass needs macOS $IGLASS_MIN_MACOS or later, which includes /usr/bin/jq."
+  fi
+  die "iglass needs jq." "$(install_hint jq)"
 }
 
 require_palette() {

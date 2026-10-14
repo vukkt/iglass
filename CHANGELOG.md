@@ -3,6 +3,23 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - Unreleased
+
+### Added
+- **Linux support for Ghostty.** The same palettes, variants, accents and light/dark switching,
+  with transparency and blur (blur where the desktop supports it, such as KDE Plasma). Liquid
+  Glass stays macOS-only, so `--glass native` is refused on Linux.
+- `install.sh` and the Homebrew formula work on Linux; jq is the only extra requirement.
+- On Linux, fonts are checked with fontconfig, previews start Ghostty directly,
+  `--window no-titlebar` hides the GTK title bar, and GNOME's high-contrast setting suggests
+  `--contrast high`. State lives in `~/.local/state/iglass`.
+- CI runs on Ubuntu as well as macOS, including an end-to-end check against the real Ghostty.
+
+### Changed
+- `iglass status` and `doctor` show the OS and only the terminals that exist on it.
+- iTerm2 options (`--terminal iterm2`, `--app-settings`, `--default`) explain that iTerm2 is
+  macOS-only when used on Linux. `export --terminal iterm2` still works anywhere.
+
 ## [1.1.1] - 2026-10-13
 
 ### Fixed
@@ -52,6 +69,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.2.0]: https://github.com/vukkt/iglass/releases/tag/v1.2.0
 [1.1.1]: https://github.com/vukkt/iglass/releases/tag/v1.1.1
 [1.1.0]: https://github.com/vukkt/iglass/releases/tag/v1.1.0
 [1.0.0]: https://github.com/vukkt/iglass/releases/tag/v1.0.0

@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=macos
 # iglass doctor: read-only checks with a clear verdict.
 
 load helpers

@@ -2,8 +2,33 @@
 # `iglass doctor`: read-only health checks. Exits 1 when something needs fixing.
 
 cmd_doctor() {
-  local problems=0 v app f broken=0 guids dupes font status
+  local problems=0
   ui_title "iglass doctor"
+  if is_linux; then
+    ui_ok "$(os_description)"
+    accessibility_hints "$(state_get '.ghostty.options.variant')" "$(state_get '.ghostty.options.contrast')"
+    if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
+      _doctor_ghostty || problems=$((problems + $?))
+    else
+      echo
+      ui_fail "Ghostty is not installed. On Linux iglass works with Ghostty: https://ghostty.org/download"
+      problems=1
+    fi
+  else
+    _doctor_macos || problems=$?
+  fi
+  echo
+  if [[ $problems == 0 ]]; then
+    ui_ok "No problems found."
+    return 0
+  fi
+  ui_fail "$problems problem(s) found."
+  return 1
+}
+
+# macOS, iTerm2 and (when present) Ghostty checks. Returns the number of problems found.
+_doctor_macos() {
+  local problems=0 v app f broken=0 guids dupes font status
 
   v=$(macos_version)
   if [[ -z "$v" ]]; then
@@ -93,7 +118,7 @@ cmd_doctor() {
 
   accessibility_hints "$(state_get '.options.variant')" "$(state_get '.options.contrast')"
 
-  if [[ -n "$(ghostty_app_path)" || -n "$(state_get '.ghostty.installedAt')" ]]; then
+  if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
     _doctor_ghostty || problems=$((problems + $?))
   fi
 
@@ -109,14 +134,7 @@ cmd_doctor() {
   if [[ -n "$(state_get '.appSettings.pending.id')" ]]; then
     ui_info "A settings change is waiting for iTerm2 to restart."
   fi
-
-  echo
-  if [[ $problems == 0 ]]; then
-    ui_ok "No problems found."
-    return 0
-  fi
-  ui_fail "$problems problem(s) found."
-  return 1
+  return $problems
 }
 
 # Ghostty checks. Returns the number of problems found.
@@ -135,7 +153,9 @@ _doctor_ghostty() {
     ui_fail "Ghostty $v is older than $IGLASS_MIN_GHOSTTY, which iglass needs."
     n=$((n + 1))
   fi
-  if version_ge "$(macos_version)" 26 && ghostty_supports_native_glass; then
+  if is_linux; then
+    ui_info "Glass on Linux is transparency plus blur; blur needs a desktop that supports it (KDE Plasma)"
+  elif version_ge "$(macos_version)" 26 && ghostty_supports_native_glass; then
     ui_ok "Real Liquid Glass is available (macos-glass)"
   else
     ui_info "Real Liquid Glass needs macOS 26+ and a recent Ghostty; iglass uses blur instead"

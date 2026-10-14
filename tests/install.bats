@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=macos
 # install / uninstall / preview / status / list against a sandboxed profiles folder.
 
 load helpers
