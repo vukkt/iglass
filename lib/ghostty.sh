@@ -267,11 +267,12 @@ ghostty_remove_include() {
   local target=$1 strip=${2:-false} tmp
   ghostty_has_include "$target" || return 0
   tmp=$(mktemp "$IGLASS_STATE_DIR/.ghostty-config.XXXXXX") || return 1
-  awk -v marker="$GHOSTTY_MARKER" -v include="$(ghostty_include_line)" -v strip="$strip" '
+  # Not "include": that's a reserved word in gawk, the awk on Fedora and Arch.
+  if ! awk -v marker="$GHOSTTY_MARKER" -v inc="$(ghostty_include_line)" -v strip="$strip" '
     { lines[NR] = $0 }
     END {
       for (i = 1; i <= NR; i++) {
-        if (lines[i] == marker && lines[i + 1] == include) {
+        if (lines[i] == marker && lines[i + 1] == inc) {
           if (n > 0 && out[n] == "") n--   # the blank separator iglass added
           last = (i + 1 == NR)
           i++
@@ -281,7 +282,10 @@ ghostty_remove_include() {
         last = 0
       }
       for (i = 1; i <= n; i++) printf "%s%s", out[i], (i < n || !(strip == "true" && last) ? "\n" : "")
-    }' "$target" >"$tmp"
+    }' "$target" >"$tmp"; then
+    rm -f "$tmp" # never replace the user's config with a half-written one
+    return 1
+  fi
   _ghostty_rewrite "$target" "$tmp"
   rm -f "$tmp"
 }

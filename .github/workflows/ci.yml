@@ -44,7 +44,9 @@ jobs:
       - name: Install lint and test tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq shellcheck bats
+          # gawk, the awk most desktop distros use, instead of Ubuntu's default mawk.
+          sudo apt-get install -y jq shellcheck bats gawk
+          awk --version | head -1
 
       # Ghostty has no official Ubuntu package; the Snap is the easiest way to get the real
       # validator. If it can't be installed, the steps that need it say so and are skipped.

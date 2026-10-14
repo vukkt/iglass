@@ -51,6 +51,24 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   [[ ! -e "$XDG/iglass.ghostty" && ! -e "$XDG/themes" ]]
 }
 
+@test "linux: a failing awk never empties the config on uninstall" {
+  mkdir -p "$XDG"
+  printf 'font-size = 14\n' >"$XDG/config.ghostty"
+  "$IGLASS" install
+  cp "$XDG/config.ghostty" "$BATS_TEST_TMPDIR/installed"
+  local real_awk
+  real_awk=$(command -v awk)
+  cat >"$MOCK_DIR/bin/awk" <<EOF
+#!/bin/bash
+[[ " \$* " == *" marker="* ]] && { echo "awk: fatal: simulated failure" >&2; exit 2; }
+exec "$real_awk" "\$@"
+EOF
+  chmod +x "$MOCK_DIR/bin/awk"
+  run "$IGLASS" uninstall
+  assert_output_has "Remove the iglass lines from it yourself"
+  cmp "$XDG/config.ghostty" "$BATS_TEST_TMPDIR/installed"
+}
+
 @test "linux: uninstall removes a config iglass created, and is safe to repeat" {
   "$IGLASS" install
   run "$IGLASS" uninstall

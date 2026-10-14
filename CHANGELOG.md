@@ -15,6 +15,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   `--contrast high`. State lives in `~/.local/state/iglass`.
 - CI runs on Ubuntu as well as macOS, including an end-to-end check against the real Ghostty.
 
+### Fixed
+- Uninstalling from Ghostty emptied the Ghostty config when `awk` is GNU awk (the default on
+  Fedora and Arch, and on Macs where gawk replaces awk): a variable name iglass used is a
+  reserved word there. iglass now also refuses to write the config if that step fails.
+
 ### Changed
 - `iglass status` and `doctor` show the OS and only the terminals that exist on it.
 - iTerm2 options (`--terminal iterm2`, `--app-settings`, `--default`) explain that iTerm2 is
