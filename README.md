@@ -71,7 +71,15 @@ Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS acc
 
 iglass works with [Ghostty](https://ghostty.org) on Linux. You get the same contrast-checked
 palettes, the four variants, accents and light/dark switching. Liquid Glass itself is Apple's
-material, so on Linux the glass is transparency plus blur, and blur depends on your desktop:
+material, so on Linux the glass is transparency plus blur, and blur depends on your desktop.
+
+| Dark | Light |
+|---|---|
+| <img src="docs/screenshots/linux-kde-frosted.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma, dark"> | <img src="docs/screenshots/linux-kde-frosted-light.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma, light"> |
+
+<sub>iglass Frosted in Ghostty on Fedora 44 with KDE Plasma, which blurs the wallpaper behind the window.</sub>
+
+What you get depends on your desktop:
 
 | Desktop | Transparency | Blur | Light/dark switching |
 |---|---|---|---|
