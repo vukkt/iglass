@@ -2,8 +2,10 @@
 #
 # Inputs:
 #   $palette  palette data (data/palette.json), passed with --slurpfile
-#   $o        options, passed with --argjson: {accent, contrast, cursor, window, font, custom}
+#   $o        options, passed with --argjson: {accent, contrast, appearance, cursor, window, font,
+#             custom}
 #       contrast: "standard" | "high"
+#       appearance: "auto" (follow macOS) | "dark" | "light" (missing means auto)
 #       cursor: "bar" | "box" | "underline" | "keep"
 #       window: "native" | "no-titlebar" | "keep"
 #       font:   null | "PostScriptName Size"
@@ -18,6 +20,11 @@ $palette[0] as $p |
 (if $o.contrast == "high" then $p.highContrast else $p end) as $colors |
 
 def suffixed($sfx): with_entries(.key += $sfx);
+
+# The palette used in each macOS appearance. Pinning one fills both light and dark keys with it,
+# so the profile looks the same whatever macOS shows.
+def mode_for($appearance):
+  if ($o.appearance // "auto") == "auto" then $appearance else $o.appearance end;
 
 # Settings iTerm2 stores per appearance (plain, " (Light)", " (Dark)").
 def modal($mode; $variant):
@@ -57,9 +64,9 @@ def font_keys:
 
 def profile($name; $guid; $variant):
   {"Name": $name, "Guid": $guid, "Tags": ["iglass"]}
-  + modal("dark"; $variant)
-  + (modal("dark"; $variant) | suffixed(" (Dark)"))
-  + (modal("light"; $variant) | suffixed(" (Light)"))
+  + modal(mode_for("dark"); $variant)
+  + (modal(mode_for("dark"); $variant) | suffixed(" (Dark)"))
+  + (modal(mode_for("light"); $variant) | suffixed(" (Light)"))
   + {
       "Use Separate Colors for Light and Dark Mode": true,
       "Background Image Location": "",

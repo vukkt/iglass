@@ -149,6 +149,42 @@ MODE_KEYS='[
   assert_success_
 }
 
+@test "--appearance dark or light pins every color, in both macOS appearances" {
+  local mode sfx
+  export_to "$BATS_TEST_TMPDIR/auto.json"
+  for mode in dark light; do
+    export_to "$BATS_TEST_TMPDIR/$mode.json" --appearance "$mode" --contrast high --opacity 0.8
+    plutil -convert xml1 -o /dev/null "$BATS_TEST_TMPDIR/$mode.json"
+    # Both the (Light) and (Dark) copies of every key equal the auto profile's $mode copy.
+    if [[ $mode == dark ]]; then sfx=" (Dark)"; else sfx=" (Light)"; fi
+    run jq -e --slurpfile auto <("$IGLASS" export --contrast high --opacity 0.8) \
+      --argjson keys "$MODE_KEYS" --arg sfx "$sfx" '
+      [.Profiles, $auto[0].Profiles] | transpose | all(.[]; .[0] as $p | .[1] as $a |
+        all($keys[]; . as $k | ($p[$k + " (Light)"] == $a[$k + $sfx]) and ($p[$k + " (Dark)"] == $a[$k + $sfx])
+          and ($p[$k] == $a[$k + $sfx])))' "$BATS_TEST_TMPDIR/$mode.json"
+    if [[ "$status" -ne 0 ]]; then
+      echo "--appearance $mode does not pin every key" >&2
+      return 1
+    fi
+  done
+  # The default follows macOS, and is byte-identical to before the option existed.
+  cmp "$BATS_TEST_TMPDIR/auto.json" <("$IGLASS" export --appearance auto)
+  cmp "$BATS_TEST_TMPDIR/auto.json" "$REPO_ROOT/themes/iglass.json"
+}
+
+@test "--appearance rejects unknown modes, and install records the choice" {
+  run "$IGLASS" export --appearance dim
+  assert_failure_
+  assert_output_has "Unknown appearance"
+  run "$IGLASS" install --appearance dark
+  assert_success_
+  assert_output_has "always dark"
+  run jq -r '.options.appearance' "$(state_file)"
+  [[ "$output" == dark ]]
+  run "$IGLASS" status
+  assert_output_has "appearance dark"
+}
+
 @test "--contrast rejects unknown levels" {
   run "$IGLASS" export --contrast extreme
   assert_failure_

@@ -3,6 +3,14 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-17
+
+### Added
+- `--appearance dark|light` keeps iglass dark (or light) while macOS or your Linux desktop
+  switches between light and dark mode. The default, `auto`, follows the system as before.
+  Works in iTerm2 and Ghostty; `status` shows it, and Ghostty previews follow it.
+  ([#2](https://github.com/vukkt/iglass/issues/2))
+
 ## [1.2.0] - 2026-10-14
 
 ### Added
@@ -77,6 +85,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.3.0]: https://github.com/vukkt/iglass/releases/tag/v1.3.0
 [1.2.0]: https://github.com/vukkt/iglass/releases/tag/v1.2.0
 [1.1.1]: https://github.com/vukkt/iglass/releases/tag/v1.1.1
 [1.1.0]: https://github.com/vukkt/iglass/releases/tag/v1.1.0

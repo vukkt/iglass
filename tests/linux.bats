@@ -201,6 +201,13 @@ EOF
   refute_logged "open "
 }
 
+@test "linux: --appearance dark pins the theme and the preview" {
+  "$IGLASS" install --appearance dark
+  grep -qx 'theme = iglass-frosted-dark' "$XDG/iglass.ghostty"
+  run "$IGLASS" preview
+  assert_logged "setsid $IGLASS_GHOSTTY_BIN --theme=iglass-frosted-dark"
+}
+
 @test "linux: GNOME high contrast suggests --contrast high" {
   MOCK_GNOME_HIGH_CONTRAST=1 run "$IGLASS" install
   assert_output_has "High contrast is on in your desktop settings"
