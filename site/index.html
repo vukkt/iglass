@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>iglass · Liquid Glass for your terminal</title>
+<meta name="description" content="A free, open-source Liquid Glass theme for iTerm2 and Ghostty on macOS and Linux. Contrast-checked, light and dark, fully reversible.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#06070b">
+<link rel="canonical" href="https://vukkt.github.io/iglass/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="iglass · Liquid Glass for your terminal">
+<meta property="og:description" content="A free, open-source Liquid Glass theme for iTerm2 and Ghostty on macOS and Linux.">
+<meta property="og:url" content="https://vukkt.github.io/iglass/">
+<meta property="og:image" content="https://vukkt.github.io/iglass/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a84ff'/%3E%3Cstop offset='.55' stop-color='%23bf5af2'/%3E%3Cstop offset='1' stop-color='%23ff375f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='url(%23g)'/%3E%3Crect x='9' y='12' width='46' height='40' rx='9' fill='white' fill-opacity='.28' stroke='white' stroke-opacity='.75' stroke-width='2'/%3E%3Cpath d='M18 26l7 6-7 6' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #06070b;
+    --text: #f5f5f7;
+    --muted: rgba(245, 245, 247, 0.66);
+    --faint: rgba(245, 245, 247, 0.42);
+    --glass: rgba(28, 30, 40, 0.42);
+    --glass-strong: rgba(28, 30, 40, 0.62);
+    --stroke: rgba(255, 255, 255, 0.14);
+    --rim: rgba(255, 255, 255, 0.28);
+    --accent: #62a7ff;
+    --green: #32d74b;
+    --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.7);
+    --blob-a: #0a84ff; --blob-b: #bf5af2; --blob-c: #ff375f; --blob-d: #ff9f0a; --blob-e: #64d2ff;
+    --blob-alpha: 0.55;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eceef4;
+      --text: #1d1d1f;
+      --muted: rgba(29, 29, 31, 0.68);
+      --faint: rgba(29, 29, 31, 0.45);
+      --glass: rgba(255, 255, 255, 0.5);
+      --glass-strong: rgba(255, 255, 255, 0.72);
+      --stroke: rgba(0, 0, 0, 0.08);
+      --rim: rgba(255, 255, 255, 0.9);
+      --accent: #005cc5;
+      --green: #007a2e;
+      --shadow: 0 30px 70px -35px rgba(30, 30, 60, 0.35);
+      --blob-alpha: 0.32;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  /* The living backdrop: Apple system colors, drifting slowly. */
+  .mesh { position: fixed; inset: -20vmax; z-index: -1; filter: blur(70px) saturate(140%); opacity: var(--blob-alpha); }
+  .mesh i { position: absolute; border-radius: 50%; width: 60vmax; height: 60vmax; animation: drift 28s ease-in-out infinite alternate; }
+  .mesh i:nth-child(1) { background: var(--blob-a); left: 0; top: 0; }
+  .mesh i:nth-child(2) { background: var(--blob-b); right: 0; top: 5vmax; animation-duration: 34s; }
+  .mesh i:nth-child(3) { background: var(--blob-c); left: 30vmax; bottom: 0; animation-duration: 31s; }
+  .mesh i:nth-child(4) { background: var(--blob-d); left: 0; bottom: 5vmax; width: 40vmax; height: 40vmax; animation-duration: 37s; }
+  .mesh i:nth-child(5) { background: var(--blob-e); right: 5vmax; bottom: 10vmax; width: 40vmax; height: 40vmax; animation-duration: 29s; }
+  @keyframes drift { to { transform: translate(8vmax, 6vmax) scale(1.12); } }
+
+  .wrap { width: min(1120px, 100% - 32px); margin: 0 auto; }
+  a { color: inherit; }
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    backdrop-filter: blur(28px) saturate(170%);
+    border: 1px solid var(--stroke);
+    box-shadow: inset 0 1px 0 var(--rim), var(--shadow);
+  }
+
+  nav { position: sticky; top: 12px; z-index: 10; margin-top: 12px; }
+  nav .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 20px; border-radius: 999px; }
+  .brand { font-weight: 700; letter-spacing: -0.02em; text-decoration: none; font-size: 19px; }
+  nav .links { display: flex; gap: 6px; align-items: center; }
+  .pill-link { text-decoration: none; font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px; color: var(--muted); }
+  .pill-link:hover { color: var(--text); background: var(--glass); }
+  .pill-link.primary { color: var(--text); background: var(--glass-strong); border: 1px solid var(--stroke); }
+
+  header { text-align: center; padding: 72px 0 28px; }
+  h1 { font-size: clamp(42px, 7.2vw, 84px); line-height: 1.02; letter-spacing: -0.045em; margin: 0 0 18px; font-weight: 700; }
+  .lede { font-size: clamp(18px, 2.2vw, 22px); color: var(--muted); max-width: 640px; margin: 0 auto; }
+
+  .reel { position: relative; margin: 36px auto 0; border-radius: 28px; overflow: hidden; padding: 8px; }
+  .reel video { display: block; width: 100%; height: auto; border-radius: 21px; background: #06070b; aspect-ratio: 16 / 9; }
+  .sound {
+    position: absolute; right: 22px; bottom: 22px; display: inline-flex; gap: 8px; align-items: center;
+    font: 600 14px/1 inherit; color: #fff; padding: 10px 14px; border-radius: 999px; cursor: pointer;
+    background: rgba(20, 20, 28, 0.45); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.22); font-family: inherit;
+  }
+  .sound:hover { background: rgba(20, 20, 28, 0.62); }
+
+  .install { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 760px; margin: 44px auto 0; }
+  .cmd { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 22px; border-radius: 18px; }
+  .cmd code { flex: 1; min-width: 0; font: 500 16px/1.4 ui-monospace, "SF Mono", Menlo, monospace; overflow-x: auto; white-space: nowrap; }
+  .cmd code .p { color: var(--green); margin-right: 10px; }
+  .cmd .label { font-size: 13px; font-weight: 600; color: var(--faint); white-space: nowrap; }
+  .copy { font: 600 13px/1 inherit; font-family: inherit; color: var(--text); background: var(--glass-strong); border: 1px solid var(--stroke); border-radius: 999px; padding: 9px 14px; cursor: pointer; }
+  .then { text-align: center; color: var(--muted); font-size: 15px; margin-top: 4px; }
+  .then code { font: 500 15px ui-monospace, "SF Mono", Menlo, monospace; color: var(--text); }
+
+  section { padding: 96px 0 0; }
+  h2 { font-size: clamp(30px, 4.2vw, 46px); letter-spacing: -0.035em; line-height: 1.08; margin: 0 0 12px; text-align: center; }
+  .sub { color: var(--muted); text-align: center; max-width: 620px; margin: 0 auto 40px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { border-radius: 24px; padding: 26px; }
+  .card h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: -0.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: 15.5px; }
+  .card .icon { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 16px; color: #fff; font-size: 19px; }
+
+  .variants { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .shot { border-radius: 20px; padding: 6px; margin: 0; }
+  .shot img { display: block; width: 100%; height: auto; border-radius: 15px; }
+  .shot figcaption { padding: 10px 8px 6px; font-weight: 600; font-size: 15px; display: flex; justify-content: space-between; }
+  .shot figcaption span { color: var(--faint); font-weight: 500; }
+
+  .platforms { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .platform { border-radius: 24px; padding: 28px; }
+  .platform h3 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.02em; }
+  .platform ul { margin: 14px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 15.5px; }
+  .platform li { padding: 6px 0; border-top: 1px solid var(--stroke); }
+  .platform li:first-child { border-top: 0; }
+  .platform { display: flex; flex-direction: column; min-width: 0; }
+  .platform img { width: 100%; height: auto; border-radius: 14px; margin-top: auto; display: block; }
+  .platform ul { margin-bottom: 20px; }
+  .grid > *, .variants > * { min-width: 0; }
+
+  .cta { text-align: center; padding: 110px 0 40px; }
+  .cta .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .button { text-decoration: none; font-weight: 600; padding: 14px 24px; border-radius: 999px; font-size: 16px; }
+  .button.solid { background: var(--text); color: var(--bg); }
+  footer { color: var(--faint); font-size: 13.5px; text-align: center; padding: 40px 0 56px; }
+  footer a { color: var(--muted); }
+
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .variants { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    header { padding-top: 48px; }
+    .grid, .platforms { grid-template-columns: 1fr; }
+    nav .links .hide-sm { display: none; }
+    .reel { border-radius: 20px; padding: 5px; }
+    .reel video { border-radius: 16px; }
+    .sound { right: 14px; bottom: 14px; padding: 8px 12px; }
+    .cmd { padding-left: 16px; gap: 10px; }
+    .cmd code { font-size: 13.5px; }
+    .cmd .label { display: none; }
+    section { padding-top: 72px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mesh i { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="mesh" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+
+<nav class="wrap">
+  <div class="bar glass">
+    <a class="brand" href="#">iglass</a>
+    <div class="links">
+      <a class="pill-link hide-sm" href="#features">Features</a>
+      <a class="pill-link hide-sm" href="#install">Install</a>
+      <a class="pill-link primary" href="https://github.com/vukkt/iglass">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header>
+    <h1>Liquid Glass<br>for your terminal.</h1>
+    <p class="lede">A free, open-source theme for iTerm2 and Ghostty, on macOS and Linux. Translucent, built from Apple's system colors, and contrast-checked so it stays readable.</p>
+    <div class="reel glass">
+      <video id="reel" src="media/iglass-reel.mp4" poster="media/poster.jpg" muted loop playsinline preload="metadata"
+             aria-label="A 15-second film: a glass capsule opens into a terminal, iglass installs, and the glass levels, accent colors and light and dark modes are shown."></video>
+      <button class="sound" id="sound" type="button" aria-pressed="false">🔈 Sound on</button>
+    </div>
+  </header>
+
+  <div class="install" id="install">
+    <div class="cmd glass">
+      <code><span class="p">❯</span>brew install vukkt/tap/iglass</code>
+      <span class="label">macOS · Linux</span>
+      <button class="copy" type="button" data-copy="brew install vukkt/tap/iglass">Copy</button>
+    </div>
+    <div class="cmd glass">
+      <code><span class="p">❯</span>curl -fsSL https://raw.githubusercontent.com/vukkt/iglass/main/install.sh | bash</code>
+      <button class="copy" type="button" data-copy="curl -fsSL https://raw.githubusercontent.com/vukkt/iglass/main/install.sh | bash">Copy</button>
+    </div>
+    <p class="then">Then run <code>iglass install</code>. Undo everything with <code>iglass uninstall</code>.</p>
+  </div>
+
+  <section id="features">
+    <h2>Glass, done carefully.</h2>
+    <p class="sub">Only the look changes. Your font, shortcuts and shell stay yours, and everything iglass touches can be restored exactly.</p>
+    <div class="grid">
+      <div class="card glass"><div class="icon" style="background:linear-gradient(135deg,#0a84ff,#64d2ff)">◐</div>
+        <h3>Real Liquid Glass</h3><p>In Ghostty on macOS 26+, iglass uses Apple's own glass material, not an imitation.</p></div>
+      <div class="card glass"><div class="icon" style="background:linear-gradient(135deg,#bf5af2,#5e5ce6)">▤</div>
+        <h3>Four levels of glass</h3><p>Clear, Frosted, Tinted and Solid, mirroring Apple's options. Pick how much shows through.</p></div>
+      <div class="card glass"><div class="icon" style="background:linear-gradient(135deg,#ff375f,#ff9f0a)">●</div>
+        <h3>Eight accents</h3><p>The macOS accent colors, for your cursor, selection and links.</p></div>
+      <div class="card glass"><div class="icon" style="background:linear-gradient(135deg,#1d1d1f,#8e8e93)">☾</div>
+        <h3>Light and dark</h3><p>Separate palettes that follow your system, or stay dark with <code>--appearance dark</code>.</p></div>
+      <div class="card glass"><div class="icon" style="background:linear-gradient(135deg,#32d74b,#64d2ff)">✓</div>
+        <h3>Contrast-checked</h3><p>Every color is checked against the window as it looks over your desktop, not a flat background.</p></div>
+      <div class="card glass"><div class="icon" style="background:linear-gradient(135deg,#ff9f0a,#ffd60a)">↺</div>
+        <h3>Safe and reversible</h3><p>Validated before it's written, backed up first, and undone byte for byte on uninstall.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pick your glass.</h2>
+    <p class="sub">The same palette at four levels of transparency. In Ghostty on macOS, real Liquid Glass.</p>
+    <div class="variants">
+      <figure class="shot glass"><img src="screenshots/ghostty-clear.png" alt="iglass Clear in Ghostty" loading="lazy" width="1140" height="795"><figcaption>Clear <span>50%</span></figcaption></figure>
+      <figure class="shot glass"><img src="screenshots/ghostty-frosted.png" alt="iglass Frosted in Ghostty" loading="lazy" width="1140" height="795"><figcaption>Frosted <span>default</span></figcaption></figure>
+      <figure class="shot glass"><img src="screenshots/ghostty-tinted.png" alt="iglass Tinted in Ghostty" loading="lazy" width="1140" height="795"><figcaption>Tinted <span>18%</span></figcaption></figure>
+      <figure class="shot glass"><img src="screenshots/ghostty-solid.png" alt="iglass Solid in Ghostty" loading="lazy" width="1140" height="795"><figcaption>Solid <span>opaque</span></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>macOS and Linux.</h2>
+    <p class="sub">One command sets up the terminal you're in.</p>
+    <div class="platforms">
+      <div class="platform glass">
+        <h3>macOS</h3>
+        <ul>
+          <li><strong>Ghostty</strong> · real Liquid Glass on macOS 26+</li>
+          <li><strong>iTerm2</strong> · transparency, blur and a tuned palette</li>
+          <li>Optional native title bar and default profile for iTerm2</li>
+        </ul>
+        <img src="screenshots/frosted.png" alt="iglass Frosted in iTerm2" loading="lazy" width="1140" height="780">
+      </div>
+      <div class="platform glass">
+        <h3>Linux</h3>
+        <ul>
+          <li><strong>Ghostty</strong> · blur on KDE Plasma and Hyprland</li>
+          <li>Tinted by default on desktops without blur, like GNOME</li>
+        </ul>
+        <img src="screenshots/linux-kde-frosted.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma" loading="lazy" width="1000" height="801">
+      </div>
+    </div>
+  </section>
+
+  <div class="cta">
+    <h2>Make your terminal feel native.</h2>
+    <p class="sub">Free and MIT-licensed. If you like it, a star helps others find it.</p>
+    <div class="buttons">
+      <a class="button solid" href="https://github.com/vukkt/iglass">Star on GitHub</a>
+      <a class="button glass" href="https://github.com/vukkt/iglass#readme">Read the docs</a>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap">
+  MIT · built by <a href="https://github.com/vukkt">@vukkt</a> · <a href="https://github.com/sponsors/vukkt">sponsor</a><br>
+  iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2 or Ghostty.
+  Liquid Glass and macOS are trademarks of Apple Inc.
+</footer>
+
+<script>
+  // Autoplay the reel silently unless the visitor prefers reduced motion; sound is opt-in.
+  const reel = document.getElementById('reel');
+  const sound = document.getElementById('sound');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still) {
+    reel.controls = true;
+    sound.hidden = true;
+  } else {
+    reel.autoplay = true;
+    reel.play().catch(() => { reel.controls = true; });
+  }
+  sound.addEventListener('click', () => {
+    reel.muted = !reel.muted;
+    if (!reel.muted) { reel.currentTime = 0; reel.play(); }
+    sound.textContent = reel.muted ? '🔈 Sound on' : '🔊 Sound off';
+    sound.setAttribute('aria-pressed', String(!reel.muted));
+  });
+  for (const b of document.querySelectorAll('.copy')) {
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copy);
+        b.textContent = 'Copied';
+      } catch {
+        b.textContent = 'Select & copy';
+      }
+      setTimeout(() => { b.textContent = 'Copy'; }, 1600);
+    });
+  }
+</script>
+</body>
+</html>
