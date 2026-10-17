@@ -2,23 +2,31 @@
 
 # iglass
 
-**A Liquid Glass theme for iTerm2 and Ghostty, on macOS and Linux.**
+**Liquid Glass for your terminal.** A theme for iTerm2 and Ghostty, on macOS and Linux.
 Translucent, built from Apple's system colors, and contrast-checked so it stays readable.
-In Ghostty on macOS it uses Apple's real Liquid Glass material.
 
 [![CI](https://github.com/vukkt/iglass/actions/workflows/ci.yml/badge.svg)](https://github.com/vukkt/iglass/actions/workflows/ci.yml)
-![macOS 15+](https://img.shields.io/badge/macOS-15%2B-black)
-![Linux](https://img.shields.io/badge/Linux-Ghostty-black)
-![iTerm2 3.5+](https://img.shields.io/badge/iTerm2-3.5%2B-black)
-![Ghostty 1.0+](https://img.shields.io/badge/Ghostty-1.0%2B-black)
+![Platforms: macOS 15+ and Linux](https://img.shields.io/badge/platforms-macOS%2015%2B%20%C2%B7%20Linux-black)
+![Terminals: iTerm2 and Ghostty](https://img.shields.io/badge/terminals-iTerm2%20%C2%B7%20Ghostty-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/vukkt)
+
+**[Website](https://vukkt.github.io/iglass/)** · [Install](#install) · [Usage](#usage) · [Linux](#linux) · [FAQ](#faq)
 
 <img src="docs/demo.gif" width="760" alt="An iTerm2 window turning glassier and changing accent color live as iglass install commands run">
 
 <sub>Tweaking iglass live: each <code>iglass install</code> updates the open window instantly.</sub>
 
 </div>
+
+## Quick start
+
+```sh
+brew install vukkt/tap/iglass   # macOS or Linux; or use the install script below
+iglass install                  # sets up the terminal you run it in
+```
+
+`iglass uninstall` undoes everything. More options: [Install](#install) and [Usage](#usage).
 
 ## Why iglass
 
@@ -50,7 +58,8 @@ terminal, carefully:
 | **Tinted** | <img src="docs/screenshots/ghostty-tinted.png" alt="iglass Tinted in Ghostty, dark"> | <img src="docs/screenshots/ghostty-tinted-light.png" alt="iglass Tinted in Ghostty, light"> |
 | **Solid** | <img src="docs/screenshots/ghostty-solid.png" alt="iglass Solid in Ghostty, dark"> | <img src="docs/screenshots/ghostty-solid-light.png" alt="iglass Solid in Ghostty, light"> |
 
-## iTerm2
+<details>
+<summary><b>iTerm2 gallery</b> (all four variants, light and dark)</summary>
 
 | | Dark | Light |
 |---|---|---|
@@ -58,6 +67,8 @@ terminal, carefully:
 | **Frosted** | <img src="docs/screenshots/frosted.png" alt="iglass Frosted in iTerm2, dark"> | <img src="docs/screenshots/frosted-light.png" alt="iglass Frosted in iTerm2, light"> |
 | **Tinted** | <img src="docs/screenshots/tinted.png" alt="iglass Tinted in iTerm2, dark"> | <img src="docs/screenshots/tinted-light.png" alt="iglass Tinted in iTerm2, light"> |
 | **Solid** | <img src="docs/screenshots/solid.png" alt="iglass Solid in iTerm2, dark"> | <img src="docs/screenshots/solid-light.png" alt="iglass Solid in iTerm2, light"> |
+
+</details>
 
 | Variant | Feels like | Transparency | Ghostty glass | Readable over |
 |---|---|---|---|---|
@@ -304,6 +315,9 @@ tools/screenshots.sh   # README screenshots over a generated backdrop (needs Scr
 tools/record-gif.sh    # docs/demo.gif (needs ffmpeg)
 osascript -l JavaScript tools/social-card.js BACKDROP.png SHOT.png docs/social-preview.png
 ```
+
+The website ([vukkt.github.io/iglass](https://vukkt.github.io/iglass/)) is `site/index.html`, published
+by the Website workflow with images taken from `docs/screenshots` at build time.
 
 Tests run in a sandbox with stand-ins for iTerm2, Ghostty and system commands, so they never
 touch your real settings. See [CONTRIBUTING.md](CONTRIBUTING.md).

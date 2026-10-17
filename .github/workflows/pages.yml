@@ -1,0 +1,56 @@
+name: Website
+
+# Publishes site/ to https://vukkt.github.io/iglass/, with images taken from docs/ at build time.
+on:
+  push:
+    branches: [main]
+    paths: [site/**, docs/screenshots/**, docs/social-preview.png, .github/workflows/pages.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/screenshots
+          cp -R site/. _site/
+          for f in ghostty-clear ghostty-frosted ghostty-tinted ghostty-solid linux-kde-frosted frosted; do
+            cp "docs/screenshots/$f.png" _site/screenshots/
+          done
+          cp docs/social-preview.png _site/og.png
+          # Every file the page references must exist.
+          grep -oE '(src|poster)="[^"]+"' _site/index.html | cut -d'"' -f2 | while read -r ref; do
+            test -f "_site/$ref" || { echo "missing: $ref"; exit 1; }
+          done
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
