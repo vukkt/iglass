@@ -144,6 +144,8 @@ Color Presets › Import), but they carry colors only, not the glass settings.
 theme = light:iglass-frosted-light,dark:iglass-frosted-dark
 ```
 
+(or `theme = iglass-frosted-dark` to stay dark all the time).
+
 These files use macOS's real Liquid Glass. On Linux, use the CLI, or make your own with
 `iglass export --terminal ghostty --glass blur --dir ./iglass-ghostty`.
 
@@ -155,6 +157,7 @@ These files use macOS's real Liquid Glass. On Linux, use the CLI, or make your o
 iglass install                          # all four variants, blue accent
 iglass install --accent purple          # pick an accent
 iglass install --contrast high          # stronger colors
+iglass install --appearance dark        # always dark, even when macOS or your desktop is light
 iglass install --terminal all           # iTerm2 and Ghostty
 iglass install --app-settings           # iTerm2 (macOS): native title bar + roomier padding (restarts iTerm2)
 iglass install --variant tinted --default   # iTerm2 (macOS): make a variant your default profile
@@ -257,6 +260,13 @@ your desktop (see [Linux](#linux)).
 Partly. Apple reserves glass for controls and navigation and keeps content clear. Terminal text
 *is* content, which is why Frosted is the default (Tinted on Linux desktops without blur),
 Tinted and Solid exist, and every variant is contrast-checked. Choose the level that suits you; Tinted is the most Apple-like for long work.
+
+### Can iglass stay dark when my system switches to light?
+
+Yes: `iglass install --appearance dark` keeps iglass dark (or `light` keeps it light) while
+macOS or your Linux desktop keeps switching. `--appearance auto`, the default, follows it again.
+Like the other options, run it with the rest of your choices, e.g.
+`iglass install --variant clear --accent pink --appearance dark`.
 
 ### Ghostty didn't change.
 

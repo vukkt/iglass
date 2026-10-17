@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-IGLASS_VERSION="1.2.0"
+IGLASS_VERSION="1.3.0"
 
 # Find the install root, following symlinks (Homebrew and install.sh link bin/iglass into PATH).
 _iglass_resolve_root() {

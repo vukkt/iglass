@@ -26,6 +26,7 @@ ${UI_BOLD}Look options${UI_RESET} (install, export)
                                          settings (default: frosted)
   --accent NAME        blue, purple, pink, red, orange, yellow, green, graphite
   --contrast LEVEL     standard (default) or high (stronger colors for readability)
+  --appearance MODE    auto (default: follow light/dark mode), dark or light (always)
   --cursor STYLE      bar (default), box, underline, or keep (use your own)
   --window STYLE       native (default), no-titlebar, or keep (use your own)
   --font FONT          keep (default), sf-mono, or "PostScriptName [size]"
@@ -53,7 +54,7 @@ EOF
 
 # --- look options --------------------------------------------------------------------------
 
-OPT_VARIANT="" OPT_ACCENT="" OPT_CONTRAST="" OPT_CURSOR="bar" OPT_WINDOW="native" OPT_FONT="keep"
+OPT_VARIANT="" OPT_ACCENT="" OPT_CONTRAST="" OPT_APPEARANCE="auto" OPT_CURSOR="bar" OPT_WINDOW="native" OPT_FONT="keep"
 OPT_OPACITY="" OPT_BLUR="" OPT_FORCE=0 OPT_APP=0 OPT_DEFAULT=0
 OPT_TERMINAL="" OPT_GLASS="auto" OPT_DIR=""
 
@@ -77,6 +78,7 @@ parse_look_options() {
       --variant) _need_value "$@"; OPT_VARIANT=$2; shift 2 ;;
       --accent) _need_value "$@"; OPT_ACCENT=$2; shift 2 ;;
       --contrast) _need_value "$@"; OPT_CONTRAST=$2; shift 2 ;;
+      --appearance) _need_value "$@"; OPT_APPEARANCE=$2; shift 2 ;;
       --cursor) _need_value "$@"; OPT_CURSOR=$2; shift 2 ;;
       --window) _need_value "$@"; OPT_WINDOW=$2; shift 2 ;;
       --font) _need_value "$@"; OPT_FONT=$2; shift 2 ;;
@@ -117,6 +119,8 @@ _validate_look_options() {
     die "Unknown accent: $OPT_ACCENT" "Choose one of: ${accents[*]}"
   _one_of "${OPT_CONTRAST:-standard}" standard high ||
     die "Unknown contrast level: $OPT_CONTRAST" "Choose one of: standard high"
+  _one_of "$OPT_APPEARANCE" auto dark light ||
+    die "Unknown appearance: $OPT_APPEARANCE" "Choose one of: auto dark light"
   _one_of "$OPT_CURSOR" bar box underline keep ||
     die "Unknown cursor style: $OPT_CURSOR" "Choose one of: bar box underline keep"
   _one_of "$OPT_WINDOW" native no-titlebar keep ||
@@ -249,9 +253,9 @@ look_options_json() {
       )}')
   fi
   jq -n --arg accent "$OPT_ACCENT" --arg contrast "${OPT_CONTRAST:-standard}" \
-    --arg cursor "$OPT_CURSOR" --arg window "$OPT_WINDOW" \
+    --arg appearance "$OPT_APPEARANCE" --arg cursor "$OPT_CURSOR" --arg window "$OPT_WINDOW" \
     --arg font "$OPT_FONT_SPEC" --argjson custom "$custom" '
-    {accent: $accent, contrast: $contrast, cursor: $cursor, window: $window,
+    {accent: $accent, contrast: $contrast, appearance: $appearance, cursor: $cursor, window: $window,
      font: (if $font == "" then null else $font end), custom: $custom}'
 }
 
@@ -313,6 +317,7 @@ install_summary() { # OPTIONS_JSON
   jq -r '[
       "\(.accent) accent",
       (if .contrast == "high" then "high contrast" else empty end),
+      (if (.appearance // "auto") != "auto" then "always \(.appearance)" else empty end),
       (if .custom.overrides.transparency != null
        then "custom opacity \((1 - .custom.overrides.transparency) * 100 | round / 100)" else empty end),
       (if .custom.overrides.blurRadius != null then "custom blur \(.custom.overrides.blurRadius)" else empty end)
@@ -399,7 +404,7 @@ _preview_ghostty() { # VARIANT
   elif [[ -z "$(palette_query '.variants[$v].name // empty' --arg v "$variant")" ]]; then
     die "Unknown variant: $variant" "Choose one of: $(palette_query '.variantOrder | join(" ")') custom"
   fi
-  ghostty_preview "$variant"
+  ghostty_preview "$variant" "$(state_get '.ghostty.options.appearance // "auto"')"
   ui_ok "Opened a Ghostty window with iglass $variant."
 }
 
@@ -430,7 +435,7 @@ _status_iterm2() {
   if profile_installed; then
     ui_ok "Installed $(state_get '.installedAt')"
     state_read | jq -r '.options // {} |
-      "  variant \(.variant // "?") · accent \(.accent // "?") · contrast \(.contrast // "standard")",
+      "  variant \(.variant // "?") · accent \(.accent // "?") · contrast \(.contrast // "standard") · appearance \(.appearance // "auto")",
       "  cursor \(.cursor // "?") · window \(.window // "?")",
       "  font \(.font // "your own")",
       (if .custom then "  custom profile: \(.custom.overrides | to_entries | map("\(.key)=\(.value)") | join(", "))" else empty end)'
@@ -455,7 +460,7 @@ cmd_status() {
   if [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
     ui_ok "Installed $(state_get '.ghostty.installedAt')"
     state_read | jq -r '.ghostty.options // {} |
-      "  variant \(if .custom then "custom (\(.custom.base))" else .variant end) · accent \(.accent) · contrast \(.contrast)",
+      "  variant \(if .custom then "custom (\(.custom.base))" else .variant end) · accent \(.accent) · contrast \(.contrast) · appearance \(.appearance // "auto")",
       "  glass \(if .glass == "native" then "real Liquid Glass" else "blur" end) · cursor \(.cursor) · font \(.fontFamily // "your own")"'
     if [[ -n "$(state_get '.ghostty.config')" ]]; then
       ui_dim "  included from $(state_get '.ghostty.config')"

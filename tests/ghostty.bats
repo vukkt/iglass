@@ -161,6 +161,20 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   [[ "$status" -eq 1 ]]
 }
 
+@test "--appearance pins Ghostty to one theme; preview follows it" {
+  "$IGLASS" install --terminal ghostty --appearance dark --variant tinted
+  grep -qx 'theme = iglass-tinted-dark' "$XDG/iglass.ghostty"
+  [[ -f "$XDG/themes/iglass-tinted-light" ]] # both still installed, for switching back
+  run "$IGLASS" preview --terminal ghostty
+  assert_logged "--theme=iglass-tinted-dark"
+  run "$IGLASS" status
+  assert_output_has "appearance dark"
+  "$IGLASS" install --terminal ghostty --appearance light --opacity 0.8
+  grep -qx 'theme = iglass-custom-light' "$XDG/iglass.ghostty"
+  "$IGLASS" install --terminal ghostty
+  grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$XDG/iglass.ghostty"
+}
+
 @test "theme colors match the iTerm2 profile colors" {
   "$IGLASS" install --terminal ghostty --accent orange --contrast high
   local hex
