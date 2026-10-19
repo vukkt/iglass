@@ -184,6 +184,20 @@ on Linux.
   background shows through sharply (verified). Clear and Frosted are contrast-checked assuming
   blur, so on desktops other than KDE Plasma and Hyprland (which blurs translucent windows
   itself) iglass defaults to Tinted, which is checked against pure black and white.
+- **niri 26.04 and GNOME 51 blur when the app asks** (checked October 2026). Both implement the
+  `ext-background-effect-v1` Wayland protocol: niri from 26.04 (its release notes), GNOME from
+  mutter 51.0 ("Add ext-background-effect-v1 blur support", !5071, in mutter's NEWS). Neither
+  blurs apps that don't ask. kitty asks from 0.46.2 (`background_blur`, per niri's notes; kitty
+  0.46.0 added the protocol). Ghostty asks from 1.4 (per niri's notes), which isn't out yet;
+  Ghostty 1.3 uses KDE's own blur protocol only. niri can add blur itself with a window rule
+  (`background-effect { blur true }`), shaped by `geometry-corner-radius`. Its default "xray"
+  blur shows the wallpaper rather than the windows behind.
+- **Versions:** `niri --version` prints `niri 26.04 (commit)`, `gnome-shell --version` prints
+  `GNOME Shell 51.1`. `XDG_CURRENT_DESKTOP` is `niri` under niri and ends in `GNOME` under GNOME
+  (`ubuntu:GNOME` on Ubuntu).
+- **Distributions** are recognized from `ID` and `ID_LIKE` in `/etc/os-release`: Garuda, CachyOS,
+  Manjaro and EndeavourOS all list `arch`. Ghostty is in Arch's own repositories; Debian, Ubuntu
+  and Fedora don't package it.
 - **Light/dark switching works live** on both KDE Plasma (color scheme) and GNOME
   (`color-scheme` setting): Ghostty follows the desktop through `theme = light:…,dark:…`.
 - **`gtk-titlebar = false`** hides the title bar on Linux; Ghostty's validator accepts it.

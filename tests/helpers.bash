@@ -17,6 +17,8 @@
 # to its Linux code paths with a ghostty command on PATH instead of Ghostty.app:
 #   MOCK_FC_FONTS="A B"          PostScript names fontconfig (fc-list) knows, with family "Mock Family"
 #   MOCK_GNOME_HIGH_CONTRAST=1   GNOME's high-contrast setting is on
+#   MOCK_NIRI=26.04              version reported by niri --version (unset: niri isn't there)
+#   MOCK_GNOME=51.1              version reported by gnome-shell --version (unset: not there)
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 IGLASS="$REPO_ROOT/bin/iglass"
@@ -47,6 +49,7 @@ setup_sandbox() {
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS IGLASS_GHOSTTY_BIN
   unset MOCK_FC_FONTS MOCK_GNOME_HIGH_CONTRAST XDG_STATE_HOME XDG_CURRENT_DESKTOP MOCK_KITTY_REJECT
+  unset MOCK_NIRI MOCK_GNOME
   export IGLASS_KITTY_BIN="$SANDBOX/no-kitty" IGLASS_KITTY_APP="$SANDBOX/no-kitty.app" # fake_kitty installs one
 
   fake_iterm_version 3.7.4
@@ -184,6 +187,19 @@ EOF
   cat >"$MOCK_DIR/bin/gsettings" <<'EOF'
 #!/bin/bash
 [[ -n "${MOCK_GNOME_HIGH_CONTRAST:-}" ]] && echo true || echo false
+EOF
+
+  # Desktop versions, which decide blur on niri and GNOME.
+  cat >"$MOCK_DIR/bin/niri" <<'EOF'
+#!/bin/bash
+[[ -n "${MOCK_NIRI:-}" ]] || exit 127
+echo "niri $MOCK_NIRI (b35bcae)"
+EOF
+
+  cat >"$MOCK_DIR/bin/gnome-shell" <<'EOF'
+#!/bin/bash
+[[ -n "${MOCK_GNOME:-}" ]] || exit 127
+echo "GNOME Shell $MOCK_GNOME"
 EOF
 
   cat >"$MOCK_DIR/bin/sw_vers" <<'EOF'

@@ -63,7 +63,7 @@ terminal, carefully:
 ## kitty
 
 kitty blurs behind its own windows on macOS, and on Linux where the desktop supports it (KDE
-Plasma, Hyprland). iglass gives it the same palettes, glass levels and accents, a title bar that's
+Plasma, Hyprland, niri 26.04+, GNOME 51+). iglass gives it the same palettes, glass levels and accents, a title bar that's
 part of the glass, and colors that switch with light and dark mode (kitty 0.38+).
 
 | | Dark | Light |
@@ -105,15 +105,29 @@ Linux. You get the same contrast-checked
 palettes, the four variants, accents and light/dark switching. Liquid Glass itself is Apple's
 material, so on Linux the glass is transparency plus blur, and blur depends on your desktop:
 
-| Desktop | Blur behind the window | Default variant | Light/dark switching |
+| Desktop | Blur behind kitty | Blur behind Ghostty | Light/dark switching |
 |---|---|---|---|
-| KDE Plasma | ✓ | Frosted | ✓ |
-| Hyprland | ✓ (Hyprland's own blur) | Frosted | If the desktop reports it |
-| GNOME and others | — | Tinted | ✓ on GNOME; elsewhere if the desktop reports it |
+| KDE Plasma | ✓ | ✓ | ✓ |
+| Hyprland | ✓ (Hyprland's own blur) | ✓ (Hyprland's own blur) | If the desktop reports it |
+| niri 26.04+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+, or now with a niri window rule | If the desktop reports it |
+| GNOME 51+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+ | ✓ |
+| GNOME 50 and earlier, others | — | — | ✓ on GNOME; elsewhere if the desktop reports it |
 
-Clear and Frosted rely on blur to keep text readable, so on a desktop without blur iglass
-installs **Tinted**, which is checked against pure black and white, and tells you why. You can
-still choose any variant with `--variant`.
+iglass recognizes the desktop and its version. Where it blurs, the default is **Frosted**. Clear
+and Frosted rely on blur to keep text readable, so where it doesn't, iglass installs **Tinted**,
+which is checked against pure black and white, and tells you why. On niri it also prints the
+window rule that adds blur behind a terminal that doesn't ask for it yet. You can still choose
+any variant with `--variant`.
+
+iglass also recognizes your distribution: Arch-based ones (Arch, Garuda, CachyOS, Manjaro,
+EndeavourOS), Debian and Ubuntu, Fedora, and openSUSE get install hints for their own package
+manager. On Garuda or any Arch-based system:
+
+```sh
+sudo pacman -S --needed jq kitty     # or ghostty
+curl -fsSL https://raw.githubusercontent.com/vukkt/iglass/main/install.sh | bash
+iglass install
+```
 
 | | Dark | Light |
 |---|---|---|
