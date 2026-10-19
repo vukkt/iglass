@@ -219,7 +219,11 @@ themes="dark-theme.auto.conf light-theme.auto.conf no-preference-theme.auto.conf
   chmod 644 "$K/kitty.conf"
 }
 
+# iTerm2 profiles are checked with Apple's plutil, so tests that include iTerm2 need macOS.
+needs_macos_tools() { [[ "$(uname -s)" == Darwin ]] || skip "needs macOS tools (plutil)"; }
+
 @test "kitty: must be installed; --terminal all skips it when it isn't" {
+  needs_macos_tools
   export IGLASS_KITTY_BIN="$SANDBOX/missing"
   run "$IGLASS" install --terminal kitty
   assert_failure_
@@ -231,7 +235,21 @@ themes="dark-theme.auto.conf light-theme.auto.conf no-preference-theme.auto.conf
   [[ -f "$(profile_file)" && ! -e "$K" ]]
 }
 
+@test "kitty on Linux: --terminal all installs Ghostty and skips a missing kitty" {
+  use_linux
+  export IGLASS_KITTY_BIN="$SANDBOX/missing"
+  XDG_CURRENT_DESKTOP=KDE run "$IGLASS" install --terminal all
+  assert_success_
+  assert_output_has "kitty isn't installed; skipped"
+  [[ -f "$IGLASS_GHOSTTY_XDG_DIR/iglass.ghostty" && ! -e "$K" ]]
+  use_linux none
+  run "$IGLASS" install --terminal all
+  assert_failure_
+  assert_output_has "None of the terminals iglass supports is installed"
+}
+
 @test "kitty: --terminal all installs every installed terminal; plain uninstall removes all" {
+  needs_macos_tools
   fake_ghostty
   run "$IGLASS" install --terminal all
   assert_success_
@@ -289,6 +307,11 @@ themes="dark-theme.auto.conf light-theme.auto.conf no-preference-theme.auto.conf
 }
 
 @test "kitty: status and doctor report the install, and settings that override it" {
+  if [[ "$(uname -s)" != Darwin ]]; then # doctor's macOS checks need macOS tools
+    use_linux
+    fake_kitty
+    export XDG_CURRENT_DESKTOP=KDE
+  fi
   "$IGLASS" install --terminal kitty --accent green
   run "$IGLASS" status
   assert_output_has "accent green"
