@@ -3,8 +3,8 @@
 
 usage() {
   cat <<EOF
-${UI_BOLD}iglass${UI_RESET} $IGLASS_VERSION — a Liquid Glass–inspired theme for iTerm2 and Ghostty
-(macOS) and Ghostty (Linux)
+${UI_BOLD}iglass${UI_RESET} $IGLASS_VERSION — a Liquid Glass–inspired theme for iTerm2, Ghostty and kitty
+(macOS), and Ghostty and kitty (Linux)
 
 ${UI_BOLD}Usage${UI_RESET}
   iglass install [options]      Install or update iglass
@@ -12,12 +12,12 @@ ${UI_BOLD}Usage${UI_RESET}
   iglass list                   Show variants and accent colors
   iglass status                 Show what is installed
   iglass doctor                 Check for problems (changes nothing)
-  iglass export [options]       Print the iTerm2 profiles (or write Ghostty files with --dir)
+  iglass export [options]       Print the iTerm2 profiles (or write Ghostty or kitty files with --dir)
   iglass uninstall              Remove iglass and undo its changes
 
 ${UI_BOLD}Terminal${UI_RESET} (install, preview, export, uninstall)
-  --terminal NAME      iterm2, ghostty or all (default: the terminal you're running in;
-                       uninstall defaults to all)
+  --terminal NAME      iterm2, ghostty, kitty or all (default: the terminal you're running in;
+                       uninstall defaults to all; all skips terminals that aren't installed)
   --glass MODE         Ghostty only: auto (default), native (real Liquid Glass, macOS 26+)
                        or blur (always blur on Linux)
 
@@ -209,11 +209,11 @@ _choose_linux_variant() {
 
 _validate_terminal_option() {
   [[ -n "$OPT_TERMINAL" ]] || return 0
-  _one_of "$OPT_TERMINAL" iterm2 ghostty all ||
-    die "Unknown terminal: $OPT_TERMINAL" "Choose one of: iterm2 ghostty all"
+  _one_of "$OPT_TERMINAL" iterm2 ghostty kitty all ||
+    die "Unknown terminal: $OPT_TERMINAL" "Choose one of: iterm2 ghostty kitty all"
   # Exporting iTerm2 profiles is just writing JSON, so it works anywhere.
   if is_linux && [[ "$OPT_TERMINAL" == iterm2 && "${IGLASS_COMMAND:-}" != export ]]; then
-    die "iTerm2 is macOS-only. On Linux iglass supports Ghostty." "Use --terminal ghostty."
+    die "iTerm2 is macOS-only. On Linux iglass supports Ghostty and kitty." "Use --terminal ghostty or --terminal kitty."
   fi
 }
 
@@ -224,7 +224,7 @@ resolve_terminals() { # DEFAULT(detect|all)
     if [[ "$1" == all ]]; then t=all; else t=$(detect_terminal); fi
   fi
   if [[ "$t" == all ]]; then
-    if is_macos; then printf 'iterm2 ghostty\n'; else printf 'ghostty\n'; fi
+    if is_macos; then printf 'iterm2 ghostty kitty\n'; else printf 'ghostty kitty\n'; fi
   else
     printf '%s\n' "$t"
   fi
@@ -236,6 +236,15 @@ ghostty_options_json() { # BASE_OPTIONS_JSON
     --arg version "$IGLASS_VERSION" --arg family "${OPT_FONT_FAMILY:-}" --arg size "${OPT_FONT_SIZE:-}" \
     --arg platform "$IGLASS_PLATFORM" '
     $o + {variant: $variant, glass: $glass, version: $version, platform: $platform,
+          fontFamily: (if $family == "" then null else $family end),
+          fontSize: (if $size == "" then null else ($size | tonumber) end)}'
+}
+
+# Options for the kitty files: the shared options plus variant, version and font family.
+kitty_options_json() { # BASE_OPTIONS_JSON
+  jq -n --argjson o "$1" --arg variant "$OPT_VARIANT" --arg version "$IGLASS_VERSION" \
+    --arg family "${OPT_FONT_FAMILY:-}" --arg size "${OPT_FONT_SIZE:-}" '
+    $o + {variant: $variant, version: $version,
           fontFamily: (if $family == "" then null else $family end),
           fontSize: (if $size == "" then null else ($size | tonumber) end)}'
 }
@@ -273,12 +282,24 @@ cmd_install() {
   if [[ ($OPT_APP == 1 || $OPT_DEFAULT == 1) && " $terminals " != *" iterm2 "* ]]; then
     die "--app-settings and --default are iTerm2 settings." "Add --terminal iterm2 (or all)."
   fi
+  local installed_count=0
   for t in $terminals; do
+    if [[ "$OPT_TERMINAL" == all ]]; then
+      case "$t" in
+        ghostty) ghostty_present || { ui_dim "  Ghostty isn't installed; skipped."; continue; } ;;
+        kitty) kitty_present || { ui_dim "  kitty isn't installed; skipped."; continue; } ;;
+      esac
+    fi
     case "$t" in
       iterm2) _install_iterm2 "$opts" ;;
       ghostty) _install_ghostty "$opts" ;;
+      kitty) _install_kitty "$opts" ;;
     esac
+    installed_count=$((installed_count + 1))
   done
+  if [[ $installed_count == 0 ]]; then
+    die "None of the terminals iglass supports is installed." "Install Ghostty (ghostty.org) or kitty (sw.kovidgoyal.net/kitty)."
+  fi
 }
 
 _install_iterm2() {
@@ -327,8 +348,8 @@ install_summary() { # OPTIONS_JSON
 _install_ghostty() {
   local opts=$1 v
   if ! ghostty_present; then
-    is_linux && die "On Linux iglass works with Ghostty, which isn't installed." \
-      "Get it from https://ghostty.org/download (or put the ghostty command on your PATH)."
+    is_linux && ! kitty_present && die "On Linux iglass works with Ghostty and kitty, and neither is installed." \
+      "Get Ghostty from https://ghostty.org/download or kitty from https://sw.kovidgoyal.net/kitty/"
     die "Ghostty is not installed." "Get it from https://ghostty.org"
   fi
   v=$(ghostty_version)
@@ -336,6 +357,16 @@ _install_ghostty() {
     ui_warn "Ghostty $v is older than $IGLASS_MIN_GHOSTTY; light/dark switching may not work."
   fi
   ghostty_install "$(ghostty_options_json "$opts")"
+  accessibility_hints "$OPT_VARIANT" "${OPT_CONTRAST:-standard}"
+}
+
+_install_kitty() {
+  local opts=$1
+  kitty_present || die "kitty is not installed." "Get it from https://sw.kovidgoyal.net/kitty/"
+  if [[ "$OPT_GLASS" == native && "$OPT_TERMINAL" == kitty ]]; then
+    ui_info "kitty has no Liquid Glass material; iglass uses kitty's own blur."
+  fi
+  kitty_install "$(kitty_options_json "$opts")"
   accessibility_hints "$OPT_VARIANT" "${OPT_CONTRAST:-standard}"
 }
 
@@ -348,7 +379,7 @@ cmd_export() {
   fi
   case "$terminal" in
     iterm2)
-      [[ -z "$OPT_DIR" ]] || die "--dir is for Ghostty, which uses several files." "Add --terminal ghostty."
+      [[ -z "$OPT_DIR" ]] || die "--dir is for Ghostty and kitty, which use several files." "Add --terminal ghostty or --terminal kitty."
       profile_build "$(look_options_json)"
       ;;
     ghostty)
@@ -357,7 +388,13 @@ cmd_export() {
       ghostty_export_dir "$(ghostty_options_json "$(look_options_json)")" "$OPT_DIR"
       ui_ok "Wrote Ghostty themes and iglass.ghostty to $OPT_DIR"
       ;;
-    *) die "export handles one terminal at a time." "Use --terminal iterm2 or --terminal ghostty." ;;
+    kitty)
+      [[ -n "$OPT_DIR" ]] || die "kitty uses several files; pass a folder with --dir." \
+        "Example: iglass export --terminal kitty --dir ./iglass-kitty"
+      kitty_export_dir "$(kitty_options_json "$(look_options_json)")" "$OPT_DIR"
+      ui_ok "Wrote iglass.conf and kitty's light/dark theme files to $OPT_DIR"
+      ;;
+    *) die "export handles one terminal at a time." "Use --terminal iterm2, ghostty or kitty." ;;
   esac
 }
 
@@ -367,14 +404,15 @@ cmd_preview() {
     case "$1" in
       --variant) _need_value "$@"; variant=$2; shift 2 ;;
       --terminal) _need_value "$@"; OPT_TERMINAL=$2; shift 2 ;;
-      *) die "Unknown option: $1" "Usage: iglass preview [--variant clear|frosted|tinted|solid|custom] [--terminal iterm2|ghostty]" ;;
+      *) die "Unknown option: $1" "Usage: iglass preview [--variant clear|frosted|tinted|solid|custom] [--terminal iterm2|ghostty|kitty]" ;;
     esac
   done
   _validate_terminal_option
-  if [[ "$(resolve_terminals detect)" == ghostty ]]; then
-    _preview_ghostty "$variant"
-    return
-  fi
+  case "$(resolve_terminals detect)" in
+    ghostty) _preview_ghostty "$variant"; return ;;
+    kitty) _preview_kitty "$variant"; return ;;
+    *" "*) die "preview opens one terminal at a time." "Use --terminal iterm2, ghostty or kitty." ;;
+  esac
   profile_installed || die "iglass is not installed." "Run: iglass install"
   if [[ -z "$variant" ]]; then
     variant=$(jq -r 'if .options.custom != null then "custom" else (.options.variant // "frosted") end' \
@@ -408,11 +446,30 @@ _preview_ghostty() { # VARIANT
   ui_ok "Opened a Ghostty window with iglass $variant."
 }
 
+_preview_kitty() { # VARIANT
+  local variant=$1 opts
+  [[ -n "$(state_get '.kitty.installedAt')" ]] ||
+    die "iglass is not installed for kitty." "Run: iglass install --terminal kitty"
+  opts=$(state_get '.kitty.options')
+  if [[ -z "$variant" ]]; then
+    variant=$(jq -r 'if .custom then "custom" else .variant end' <<<"$opts")
+  elif [[ "$variant" == custom ]]; then
+    [[ "$(jq -r '.custom != null' <<<"$opts")" == true ]] ||
+      die "No custom settings are installed." "Create them with: iglass install --terminal kitty --opacity 0.8"
+  elif [[ -n "$(palette_query '.variants[$v].name // empty' --arg v "$variant")" ]]; then
+    opts=$(jq --arg v "$variant" '. + {variant: $v, custom: null}' <<<"$opts")
+  else
+    die "Unknown variant: $variant" "Choose one of: $(palette_query '.variantOrder | join(" ")') custom"
+  fi
+  kitty_preview "$opts"
+  ui_ok "Opened a kitty window with iglass $variant."
+}
+
 cmd_list() {
   local installed_variant="" installed_accent="" k
   if is_linux; then
-    installed_variant=$(state_get '.ghostty.options.variant')
-    installed_accent=$(state_get '.ghostty.options.accent')
+    installed_variant=$(state_get '(.ghostty.options // .kitty.options).variant')
+    installed_accent=$(state_get '(.ghostty.options // .kitty.options).accent')
   elif profile_installed; then
     installed_variant=$(state_get '.options.variant')
     installed_accent=$(state_get '.options.accent')
@@ -471,11 +528,27 @@ cmd_status() {
     ui_info "Not installed."
   fi
   echo
-  if is_macos; then
-    ui_dim "iTerm2 $(iterm_version) · Ghostty $(ghostty_version) · $(os_description)"
+  ui_title "kitty"
+  if [[ -n "$(state_get '.kitty.installedAt')" ]]; then
+    ui_ok "Installed $(state_get '.kitty.installedAt')"
+    state_read | jq -r '.kitty.options // {} |
+      "  variant \(if .custom then "custom (\(.custom.base))" else .variant end) · accent \(.accent) · contrast \(.contrast) · appearance \(.appearance // "auto")",
+      "  cursor \(.cursor) · font \(.fontFamily // "your own")"'
+    if [[ -n "$(state_get '.kitty.config')" ]]; then
+      ui_dim "  included from $(state_get '.kitty.config')"
+    else
+      ui_warn "Not included from your kitty config yet; see: iglass doctor"
+    fi
   else
-    ui_dim "Ghostty $(ghostty_version) · $(os_description)"
+    ui_info "Not installed."
   fi
+  echo
+  # Versions of what's installed, e.g. "iTerm2 3.7.4 · kitty 0.49.2 · macOS 27.0.1".
+  local versions="" v
+  v=$(iterm_version); [[ -n "$v" ]] && versions+="iTerm2 $v · "
+  v=$(ghostty_version); [[ -n "$v" ]] && versions+="Ghostty $v · "
+  v=$(kitty_version); [[ -n "$v" ]] && versions+="kitty $v · "
+  ui_dim "$versions$(os_description)"
 }
 
 cmd_uninstall() {
@@ -493,6 +566,9 @@ cmd_uninstall() {
   terminals=$(resolve_terminals all)
   if [[ " $terminals " == *" ghostty "* ]]; then
     ghostty_uninstall
+  fi
+  if [[ " $terminals " == *" kitty "* ]]; then
+    kitty_uninstall
   fi
   [[ " $terminals " == *" iterm2 "* ]] || return 0
 

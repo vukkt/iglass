@@ -86,10 +86,18 @@ JXA
 }
 
 # Which terminal is this running in? Falls back to whichever supported terminal is installed.
-# On Linux that can only be Ghostty.
+# kitty is checked first: it sets KITTY_WINDOW_ID, but keeps a TERM_PROGRAM it inherited.
 detect_terminal() {
+  if [[ -n "${KITTY_WINDOW_ID:-}" ]]; then
+    printf 'kitty\n'
+    return
+  fi
   if is_linux; then
-    printf 'ghostty\n'
+    if [[ "${TERM_PROGRAM:-}" == ghostty ]] || ghostty_present || ! kitty_present; then
+      printf 'ghostty\n'
+    else
+      printf 'kitty\n'
+    fi
     return
   fi
   case "${TERM_PROGRAM:-}" in
@@ -100,6 +108,8 @@ detect_terminal() {
         printf 'iterm2\n'
       elif ghostty_present; then
         printf 'ghostty\n'
+      elif kitty_present; then
+        printf 'kitty\n'
       else
         printf 'iterm2\n'
       fi

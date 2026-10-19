@@ -6,12 +6,20 @@ cmd_doctor() {
   ui_title "iglass doctor"
   if is_linux; then
     ui_ok "$(os_description)"
-    accessibility_hints "$(state_get '.ghostty.options.variant')" "$(state_get '.ghostty.options.contrast')"
+    accessibility_hints "$(state_get '(.ghostty.options // .kitty.options).variant')" \
+      "$(state_get '(.ghostty.options // .kitty.options).contrast')"
+    local any=0
     if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
+      any=1
       _doctor_ghostty || problems=$((problems + $?))
-    else
+    fi
+    if kitty_present || [[ -n "$(state_get '.kitty.installedAt')" ]]; then
+      any=1
+      _doctor_kitty || problems=$((problems + $?))
+    fi
+    if [[ $any == 0 ]]; then
       echo
-      ui_fail "Ghostty is not installed. On Linux iglass works with Ghostty: https://ghostty.org/download"
+      ui_fail "Neither Ghostty nor kitty is installed. On Linux iglass works with Ghostty (ghostty.org) and kitty (sw.kovidgoyal.net/kitty)."
       problems=1
     fi
   else
@@ -121,6 +129,9 @@ _doctor_macos() {
   if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
     _doctor_ghostty || problems=$((problems + $?))
   fi
+  if kitty_present || [[ -n "$(state_get '.kitty.installedAt')" ]]; then
+    _doctor_kitty || problems=$((problems + $?))
+  fi
 
   status=$(appsettings_status)
   case "$status" in
@@ -196,6 +207,73 @@ _doctor_ghostty() {
     n=$((n + 1))
   else
     ui_ok "Ghostty accepts your configuration"
+  fi
+  return $n
+}
+
+# kitty checks. Returns the number of problems found.
+_doctor_kitty() {
+  local n=0 v dir current target f after
+  echo
+  ui_title "kitty"
+  if ! kitty_present; then
+    ui_fail "kitty is not installed, but iglass files for it are. Run: iglass uninstall --terminal kitty"
+    return 1
+  fi
+  v=$(kitty_version)
+  ui_ok "kitty ${v:-(unknown version)}"
+  if kitty_auto_themes_supported; then
+    ui_ok "Colors follow light and dark mode (kitty $IGLASS_MIN_KITTY_AUTO+)"
+  else
+    ui_warn "kitty $v can't switch colors with light and dark mode; kitty $IGLASS_MIN_KITTY_AUTO+ can"
+  fi
+  if is_macos; then
+    ui_ok "kitty blurs behind its windows on macOS"
+  elif desktop_blurs; then
+    ui_ok "$(desktop_name) blurs behind translucent windows"
+  else
+    ui_info "$(desktop_name | sed 's/^$/This desktop/') doesn't blur behind windows (KDE Plasma and Hyprland do); Tinted or Solid read best"
+  fi
+  [[ -n "$(state_get '.kitty.installedAt')" ]] || {
+    ui_info "iglass is not installed for kitty. Run: iglass install --terminal kitty"
+    return $n
+  }
+  dir=$(state_get '.kitty.dir')
+  current=$(kitty_config_dir)
+  if [[ "$dir" != "$current" ]]; then
+    ui_fail "kitty now reads its config from $current, but iglass is installed in $dir. Run: iglass install --terminal kitty"
+    n=$((n + 1))
+  fi
+  for f in iglass.conf $KITTY_THEME_FILES; do
+    if [[ ! -f "$dir/$f" ]]; then
+      ui_fail "Missing $dir/$f. Run: iglass install --terminal kitty"
+      n=$((n + 1))
+    elif ! kitty_is_ours "$dir/$f"; then
+      ui_fail "$dir/$f isn't iglass's, so it overrides iglass's colors. Run: iglass install --terminal kitty (yours is kept)"
+      n=$((n + 1))
+    fi
+  done
+  target=$(state_get '.kitty.config')
+  if [[ -z "$target" ]] || ! configfile_has_include "$target" "$KITTY_MARKER" "include $dir/iglass.conf"; then
+    ui_fail "Your kitty config doesn't include iglass. Run: iglass install --terminal kitty"
+    n=$((n + 1))
+  else
+    # In kitty.conf the last setting wins, so settings after iglass's include override it.
+    after=$(awk -v inc="include $dir/iglass.conf" 'found && $0 !~ /^[[:space:]]*(#|$)/ { c++ } $0 == inc { found = 1 } END { print c + 0 }' "$target")
+    if [[ "$after" != 0 ]]; then
+      ui_warn "$target has $after setting(s) after iglass's include; they can override iglass."
+    else
+      ui_ok "Included from $target"
+    fi
+    # kitty's own parser over the whole config, the user's settings included.
+    local out
+    if ! out=$(kitty_validate "$target" 2>&1); then
+      ui_fail "kitty reports problems in your configuration:"
+      printf '%s\n' "$out" | sed 's/^/    /' >&2
+      n=$((n + 1))
+    else
+      ui_ok "kitty accepts your configuration"
+    fi
   fi
   return $n
 }

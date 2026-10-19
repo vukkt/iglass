@@ -55,7 +55,7 @@ function run(argv) {
   const white = color(1, 1, 1, 1), soft = color(1, 1, 1, 0.82);
   text("iglass", 64, 380, $.NSFont.systemFontOfSizeWeight(112, $.NSFontWeightBold), white);
   text("A Liquid Glass theme", 68, 316, $.NSFont.systemFontOfSizeWeight(36, $.NSFontWeightSemibold), white);
-  text("for iTerm2 and Ghostty", 68, 272, $.NSFont.systemFontOfSizeWeight(36, $.NSFontWeightSemibold), white);
+  text("for iTerm2, Ghostty & kitty", 68, 272, $.NSFont.systemFontOfSizeWeight(36, $.NSFontWeightSemibold), white);
   text("Real Liquid Glass in Ghostty · Apple system colors", 68, 214, $.NSFont.systemFontOfSizeWeight(21, $.NSFontWeightRegular), soft);
   text("Contrast-checked · light & dark · macOS & Linux", 68, 184, $.NSFont.systemFontOfSizeWeight(21, $.NSFontWeightRegular), soft);
   $.NSGraphicsContext.restoreGraphicsState;

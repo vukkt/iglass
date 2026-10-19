@@ -1,6 +1,6 @@
 # Homebrew formula for iglass. Published in github.com/vukkt/homebrew-tap as Formula/iglass.rb; keep both in sync.
 class Iglass < Formula
-  desc "Liquid Glass theme for iTerm2 and Ghostty"
+  desc "Liquid Glass theme for iTerm2, Ghostty and kitty"
   homepage "https://github.com/vukkt/iglass"
   url "https://github.com/vukkt/iglass/archive/refs/tags/v1.3.0.tar.gz"
   sha256 "9fe3ec8982dc1b9aab4f7d0ee04d231784334f1187bb3f183cbbd699da00c1e3"
@@ -17,7 +17,7 @@ class Iglass < Formula
 
   def caveats
     <<~EOS
-      To install the theme into your terminal (iTerm2 or Ghostty), run:
+      To install the theme into your terminal (iTerm2, Ghostty or kitty), run:
         iglass install
       Remove it before uninstalling the formula:
         iglass uninstall

@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>iglass · Liquid Glass for your terminal</title>
-<meta name="description" content="A free, open-source Liquid Glass theme for iTerm2 and Ghostty on macOS and Linux. Contrast-checked, light and dark, fully reversible.">
+<meta name="description" content="A free, open-source Liquid Glass theme for iTerm2, Ghostty and kitty on macOS and Linux. Contrast-checked, light and dark, fully reversible.">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#06070b">
 <link rel="canonical" href="https://vukkt.github.io/iglass/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="iglass · Liquid Glass for your terminal">
-<meta property="og:description" content="A free, open-source Liquid Glass theme for iTerm2 and Ghostty on macOS and Linux.">
+<meta property="og:description" content="A free, open-source Liquid Glass theme for iTerm2, Ghostty and kitty on macOS and Linux.">
 <meta property="og:url" content="https://vukkt.github.io/iglass/">
 <meta property="og:image" content="https://vukkt.github.io/iglass/og.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -124,7 +124,8 @@
   .shot figcaption { padding: 10px 8px 6px; font-weight: 600; font-size: 15px; display: flex; justify-content: space-between; }
   .shot figcaption span { color: var(--faint); font-weight: 500; }
 
-  .platforms { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .platforms, .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pair > * { min-width: 0; }
   .platform { border-radius: 24px; padding: 28px; }
   .platform h3 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.02em; }
   .platform ul { margin: 14px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 15.5px; }
@@ -149,7 +150,7 @@
   }
   @media (max-width: 640px) {
     header { padding-top: 48px; }
-    .grid, .platforms { grid-template-columns: 1fr; }
+    .grid, .platforms, .pair { grid-template-columns: 1fr; }
     nav .links .hide-sm { display: none; }
     .reel { border-radius: 20px; padding: 5px; }
     .reel video { border-radius: 16px; }
@@ -172,6 +173,7 @@
     <a class="brand" href="#">iglass</a>
     <div class="links">
       <a class="pill-link hide-sm" href="#features">Features</a>
+      <a class="pill-link hide-sm" href="#kitty">kitty</a>
       <a class="pill-link hide-sm" href="#install">Install</a>
       <a class="pill-link primary" href="https://github.com/vukkt/iglass">GitHub ↗</a>
     </div>
@@ -181,7 +183,7 @@
 <main class="wrap">
   <header>
     <h1>Liquid Glass<br>for your terminal.</h1>
-    <p class="lede">A free, open-source theme for iTerm2 and Ghostty, on macOS and Linux. Translucent, built from Apple's system colors, and contrast-checked so it stays readable.</p>
+    <p class="lede">A free, open-source theme for iTerm2, Ghostty and kitty, on macOS and Linux. Translucent, built from Apple's system colors, and contrast-checked so it stays readable.</p>
     <div class="reel glass">
       <video id="reel" src="media/iglass-reel.mp4" poster="media/poster.jpg" muted loop playsinline preload="metadata"
              aria-label="A 15-second film: a glass capsule opens into a terminal, iglass installs, and the glass levels, accent colors and light and dark modes are shown."></video>
@@ -232,6 +234,15 @@
     </div>
   </section>
 
+  <section id="kitty">
+    <h2>Now in kitty too.</h2>
+    <p class="sub">kitty's own blur, the same palettes and glass levels, and a title bar that's part of the glass. Colors follow light and dark mode.</p>
+    <div class="pair">
+      <figure class="shot glass"><img src="screenshots/kitty-frosted.png" alt="iglass Frosted in kitty, dark" loading="lazy" width="1140" height="674"><figcaption>Frosted <span>dark</span></figcaption></figure>
+      <figure class="shot glass"><img src="screenshots/kitty-frosted-light.png" alt="iglass Frosted in kitty, light" loading="lazy" width="1140" height="674"><figcaption>Frosted <span>light</span></figcaption></figure>
+    </div>
+  </section>
+
   <section>
     <h2>macOS and Linux.</h2>
     <p class="sub">One command sets up the terminal you're in.</p>
@@ -240,6 +251,7 @@
         <h3>macOS</h3>
         <ul>
           <li><strong>Ghostty</strong> · real Liquid Glass on macOS 26+</li>
+          <li><strong>kitty</strong> · kitty's own blur, with a glass title bar</li>
           <li><strong>iTerm2</strong> · transparency, blur and a tuned palette</li>
           <li>Optional native title bar and default profile for iTerm2</li>
         </ul>
@@ -248,7 +260,7 @@
       <div class="platform glass">
         <h3>Linux</h3>
         <ul>
-          <li><strong>Ghostty</strong> · blur on KDE Plasma and Hyprland</li>
+          <li><strong>Ghostty</strong> and <strong>kitty</strong> · blur on KDE Plasma and Hyprland</li>
           <li>Tinted by default on desktops without blur, like GNOME</li>
         </ul>
         <img src="screenshots/linux-kde-frosted.png" alt="iglass Frosted in Ghostty on Fedora KDE Plasma" loading="lazy" width="1000" height="801">
@@ -268,7 +280,7 @@
 
 <footer class="wrap">
   MIT · built by <a href="https://github.com/vukkt">@vukkt</a> · <a href="https://github.com/sponsors/vukkt">sponsor</a><br>
-  iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2 or Ghostty.
+  iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2, Ghostty or kitty.
   Liquid Glass and macOS are trademarks of Apple Inc.
 </footer>
 

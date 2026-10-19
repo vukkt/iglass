@@ -2,16 +2,16 @@
 
 # iglass
 
-**Liquid Glass for your terminal.** A theme for iTerm2 and Ghostty, on macOS and Linux.
+**Liquid Glass for your terminal.** A theme for iTerm2, Ghostty and kitty, on macOS and Linux.
 Translucent, built from Apple's system colors, and contrast-checked so it stays readable.
 
 [![CI](https://github.com/vukkt/iglass/actions/workflows/ci.yml/badge.svg)](https://github.com/vukkt/iglass/actions/workflows/ci.yml)
 ![Platforms: macOS 15+ and Linux](https://img.shields.io/badge/platforms-macOS%2015%2B%20%C2%B7%20Linux-black)
-![Terminals: iTerm2 and Ghostty](https://img.shields.io/badge/terminals-iTerm2%20%C2%B7%20Ghostty-black)
+![Terminals: iTerm2, Ghostty and kitty](https://img.shields.io/badge/terminals-iTerm2%20%C2%B7%20Ghostty%20%C2%B7%20kitty-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/vukkt)
 
-**[Website](https://vukkt.github.io/iglass/)** · [Install](#install) · [Usage](#usage) · [Linux](#linux) · [FAQ](#faq)
+**[Website](https://vukkt.github.io/iglass/)** · [Install](#install) · [Usage](#usage) · [kitty](#kitty) · [Linux](#linux) · [FAQ](#faq)
 
 <img src="docs/demo.gif" width="760" alt="An iTerm2 window turning glassier and changing accent color live as iglass install commands run">
 
@@ -35,8 +35,10 @@ terminal, carefully:
 
 - **Real Liquid Glass in Ghostty** (macOS 26+): Apple's own glass material, not an imitation.
 - **The closest iTerm2 allows**: transparency, blur and a palette designed to sit on top of them.
-- **Linux too**: the same palettes in Ghostty on Linux, with transparency, and blur where your
-  desktop provides it.
+- **kitty too**: kitty's own blur on macOS (and on Linux desktops that support it), with a title
+  bar that's part of the glass.
+- **Linux too**: the same palettes in Ghostty and kitty on Linux, with transparency, and blur
+  where your desktop provides it.
 - **Four glass levels**, mirroring Apple's own options: Clear, Frosted, Tinted and Solid.
 - **Follows light and dark mode** automatically, with a separate palette for each.
 - **Apple's system colors** and macOS accent colors, adjusted only where contrast requires it.
@@ -57,6 +59,21 @@ terminal, carefully:
 | **Frosted** | <img src="docs/screenshots/ghostty-frosted.png" alt="iglass Frosted in Ghostty, dark"> | <img src="docs/screenshots/ghostty-frosted-light.png" alt="iglass Frosted in Ghostty, light"> |
 | **Tinted** | <img src="docs/screenshots/ghostty-tinted.png" alt="iglass Tinted in Ghostty, dark"> | <img src="docs/screenshots/ghostty-tinted-light.png" alt="iglass Tinted in Ghostty, light"> |
 | **Solid** | <img src="docs/screenshots/ghostty-solid.png" alt="iglass Solid in Ghostty, dark"> | <img src="docs/screenshots/ghostty-solid-light.png" alt="iglass Solid in Ghostty, light"> |
+
+## kitty
+
+kitty blurs behind its own windows on macOS, and on Linux where the desktop supports it (KDE
+Plasma, Hyprland). iglass gives it the same palettes, glass levels and accents, a title bar that's
+part of the glass, and colors that switch with light and dark mode (kitty 0.38+).
+
+| | Dark | Light |
+|---|---|---|
+| **Clear** | <img src="docs/screenshots/kitty-clear.png" alt="iglass Clear in kitty, dark"> | <img src="docs/screenshots/kitty-clear-light.png" alt="iglass Clear in kitty, light"> |
+| **Frosted** | <img src="docs/screenshots/kitty-frosted.png" alt="iglass Frosted in kitty, dark"> | <img src="docs/screenshots/kitty-frosted-light.png" alt="iglass Frosted in kitty, light"> |
+| **Tinted** | <img src="docs/screenshots/kitty-tinted.png" alt="iglass Tinted in kitty, dark"> | <img src="docs/screenshots/kitty-tinted-light.png" alt="iglass Tinted in kitty, light"> |
+| **Solid** | <img src="docs/screenshots/kitty-solid.png" alt="iglass Solid in kitty, dark"> | <img src="docs/screenshots/kitty-solid-light.png" alt="iglass Solid in kitty, light"> |
+
+<sub>kitty 0.49 on macOS.</sub>
 
 <details>
 <summary><b>iTerm2 gallery</b> (all four variants, light and dark)</summary>
@@ -83,7 +100,8 @@ Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS acc
 
 ## Linux
 
-iglass works with [Ghostty](https://ghostty.org) on Linux. You get the same contrast-checked
+iglass works with [Ghostty](https://ghostty.org) and [kitty](https://sw.kovidgoyal.net/kitty/) on
+Linux. You get the same contrast-checked
 palettes, the four variants, accents and light/dark switching. Liquid Glass itself is Apple's
 material, so on Linux the glass is transparency plus blur, and blur depends on your desktop:
 
@@ -107,11 +125,13 @@ still choose any variant with `--variant`.
 ## Install
 
 **Requirements**
-- **macOS:** macOS 15 or later, and [iTerm2](https://iterm2.com) 3.5+ or
-  [Ghostty](https://ghostty.org) 1.0+. Real Liquid Glass needs macOS 26+ and a recent Ghostty.
-- **Linux:** [Ghostty](https://ghostty.org/download) 1.0+ with the `ghostty` command on your
-  PATH, plus `bash`, `curl` and `jq` (`sudo apt install jq`, `sudo dnf install jq`,
-  `sudo pacman -S jq`).
+- **macOS:** macOS 15 or later, and [iTerm2](https://iterm2.com) 3.5+,
+  [Ghostty](https://ghostty.org) 1.0+ or [kitty](https://sw.kovidgoyal.net/kitty/) 0.38+.
+  Real Liquid Glass needs macOS 26+ and a recent Ghostty.
+- **Linux:** [Ghostty](https://ghostty.org/download) 1.0+ or
+  [kitty](https://sw.kovidgoyal.net/kitty/binary/) 0.38+ with its command on your PATH, plus
+  `bash`, `curl` and `jq` (`sudo apt install jq`, `sudo dnf install jq`, `sudo pacman -S jq`).
+- Earlier kitty versions work too, without switching colors with light and dark mode.
 
 With Homebrew (macOS or Linux):
 
@@ -135,10 +155,9 @@ cd iglass && ./install.sh --local
 iglass install
 ```
 
-`iglass install` sets up the terminal you run it in (on Linux, always Ghostty). Use
-`--terminal iterm2`, `ghostty` or `all` to choose. In iTerm2, open a window with
-`iglass preview` or pick **Profiles › iglass Frosted**. In Ghostty, quit and reopen it
-(Ghostty reads transparency only at launch).
+`iglass install` sets up the terminal you run it in. Use `--terminal iterm2`, `ghostty`, `kitty`
+or `all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles › iglass
+Frosted**. In Ghostty and kitty, quit and reopen them (they read transparency only at launch).
 
 <details>
 <summary>Without the CLI</summary>
@@ -160,6 +179,10 @@ theme = light:iglass-frosted-light,dark:iglass-frosted-dark
 These files use macOS's real Liquid Glass. On Linux, use the CLI, or make your own with
 `iglass export --terminal ghostty --glass blur --dir ./iglass-ghostty`.
 
+**kitty:** copy the files in [`themes/kitty`](themes/kitty) to your kitty config folder (usually
+`~/.config/kitty`), then add `include iglass.conf` to the end of your `kitty.conf`. If you made
+light/dark themes with `kitten themes`, these replace them, so keep a copy.
+
 </details>
 
 ## Usage
@@ -169,7 +192,8 @@ iglass install                          # all four variants, blue accent
 iglass install --accent purple          # pick an accent
 iglass install --contrast high          # stronger colors
 iglass install --appearance dark        # always dark, even when macOS or your desktop is light
-iglass install --terminal all           # iTerm2 and Ghostty
+iglass install --terminal kitty         # pick the terminal (default: the one you're in)
+iglass install --terminal all           # every supported terminal you have installed
 iglass install --app-settings           # iTerm2 (macOS): native title bar + roomier padding (restarts iTerm2)
 iglass install --variant tinted --default   # iTerm2 (macOS): make a variant your default profile
 
@@ -204,6 +228,18 @@ Opacity below the readable minimum (0.66) asks for `--force`.
 - iglass's own record of what it changed, and the backup of your config, live in
   `~/Library/Application Support/iglass` on macOS and `~/.local/state/iglass` on Linux.
 
+### What iglass changes in kitty
+
+In the folder kitty reads its configuration from (chosen exactly the way kitty chooses it,
+usually `~/.config/kitty`):
+
+- `iglass.conf`: opacity, blur, padding and cursor.
+- `dark-theme.auto.conf`, `light-theme.auto.conf` and `no-preference-theme.auto.conf`: the
+  colors kitty switches between with light and dark mode. If you already have your own (from
+  `kitten themes`), iglass sets them aside and puts them back on uninstall.
+- Two lines at the end of `kitty.conf`: a comment and `include iglass.conf`. Like Ghostty's,
+  backed up first and restored exactly by `iglass uninstall`.
+
 ### App-wide settings (iTerm2)
 
 Some of the native feel comes from iTerm2 settings that apply to every window, not just a
@@ -222,7 +258,7 @@ Backups live in `~/Library/Application Support/iglass/backups`.
 
 ## How it works
 
-One contrast-checked palette drives both terminals:
+One contrast-checked palette drives every terminal:
 
 1. [`design/palettes.json`](design/palettes.json) holds Apple's system colors, the variants and
    the contrast targets.
@@ -243,9 +279,12 @@ For **Ghostty**, iglass writes theme files and checks them with Ghostty's own va
 anything touches your config. It asks Ghostty whether it supports `macos-glass` rather than
 guessing from version numbers.
 
+For **kitty**, which has no validator command, iglass loads every generated file with kitty's own
+config parser (the one kitty runs at startup) before anything touches your config.
+
 The CLI is plain bash plus the `jq`, `plutil` and `defaults` that ship with macOS, so there is
 nothing else to install on a Mac. On Linux it needs `jq`, and uses fontconfig to check fonts.
-More detail, including what was verified in iTerm2's and Ghostty's behavior:
+More detail, including what was verified in each terminal's behavior:
 [docs/research-notes.md](docs/research-notes.md).
 
 ## FAQ
@@ -266,11 +305,18 @@ No. Liquid Glass is Apple's material and only exists on macOS. On Linux, iglass 
 palettes with transparency and blur, so it looks glassy and stays readable. Blur depends on
 your desktop (see [Linux](#linux)).
 
+### Is it Liquid Glass in kitty?
+
+No: kitty has no access to Apple's glass material, so iglass uses kitty's own blur, which on
+macOS kitty draws itself rather than leaving it to the system. With the matching title bar, it
+looks and feels like glass. For the real material on macOS, use Ghostty.
+
 ### Isn't glass behind text against Apple's own advice?
 
 Partly. Apple reserves glass for controls and navigation and keeps content clear. Terminal text
 *is* content, which is why Frosted is the default (Tinted on Linux desktops without blur),
-Tinted and Solid exist, and every variant is contrast-checked. Choose the level that suits you; Tinted is the most Apple-like for long work.
+Tinted and Solid exist, and every variant is contrast-checked. Choose the level that suits you;
+Tinted is the most Apple-like for long work.
 
 ### Can iglass stay dark when my system switches to light?
 
@@ -279,10 +325,11 @@ macOS or your Linux desktop keeps switching. `--appearance auto`, the default, f
 Like the other options, run it with the rest of your choices, e.g.
 `iglass install --variant clear --accent pink --appearance dark`.
 
-### Ghostty didn't change.
+### Ghostty or kitty didn't change.
 
-Quit and reopen Ghostty: it reads transparency only at launch. If it still looks the same, run
-`iglass doctor`; another config file loading after yours can override iglass.
+Quit and reopen it: both read transparency only at launch. If it still looks the same, run
+`iglass doctor`. In Ghostty, a config file loading after yours can override iglass; in kitty,
+settings after iglass's `include` line in `kitty.conf` can.
 
 ### My prompt icons disappeared.
 
@@ -324,7 +371,7 @@ touch your real settings. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2 or
-Ghostty. Liquid Glass, macOS and SF Mono are trademarks of Apple Inc.
+iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2, Ghostty or
+kitty. Liquid Glass, macOS and SF Mono are trademarks of Apple Inc.
 
 MIT · built by [@vukkt](https://github.com/vukkt) · [sponsor](https://github.com/sponsors/vukkt)

@@ -26,6 +26,11 @@ jobs:
       - name: Install lint and test tools
         run: brew install shellcheck bats-core
 
+      # The real kitty, so its own config parser checks what iglass generates.
+      - name: Install kitty
+        continue-on-error: true
+        run: brew install --cask kitty && /Applications/kitty.app/Contents/MacOS/kitty --version
+
       - name: Tool versions
         run: |
           sw_vers
@@ -68,6 +73,18 @@ jobs:
           sudo snap install ghostty --classic
           ghostty --version
 
+      # kitty 0.49.2 from its official release, checked against a pinned checksum.
+      - name: Install kitty
+        id: kitty
+        continue-on-error: true
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/kitty.txz" \
+            https://github.com/kovidgoyal/kitty/releases/download/v0.49.2/kitty-0.49.2-x86_64.txz
+          echo "d573618b911e9c461bd421b96c13c74c7f1cb2f1ac9c327818d4ff84366cf5c6  $RUNNER_TEMP/kitty.txz" | sha256sum -c -
+          sudo mkdir -p /opt/kitty && sudo tar -xJf "$RUNNER_TEMP/kitty.txz" -C /opt/kitty
+          sudo ln -sf /opt/kitty/bin/kitty /usr/local/bin/kitty
+          kitty --version
+
       - name: Tool versions
         run: |
           cat /etc/os-release | head -2
@@ -104,6 +121,27 @@ jobs:
           "$iglass" uninstall
           cmp "$HOME/.config/ghostty/config" "$RUNNER_TEMP/original"
           echo "Config restored byte for byte."
+
+      - name: End to end with the real kitty
+        if: steps.kitty.outcome == 'success'
+        run: |
+          export HOME="$RUNNER_TEMP/khome" XDG_CURRENT_DESKTOP=KDE
+          unset XDG_CONFIG_HOME XDG_STATE_HOME KITTY_CONFIG_DIRECTORY
+          mkdir -p "$HOME/.config/kitty"
+          printf 'font_size 13\n# mine' >"$HOME/.config/kitty/kitty.conf"
+          printf '# my own dark theme\nbackground #101010\n' >"$HOME/.config/kitty/dark-theme.auto.conf"
+          cp "$HOME/.config/kitty/kitty.conf" "$RUNNER_TEMP/kitty-original"
+          cp "$HOME/.config/kitty/dark-theme.auto.conf" "$RUNNER_TEMP/kitty-theme-original"
+          ./install.sh --local
+          iglass=$HOME/.local/bin/iglass
+          "$iglass" install --terminal kitty --variant clear --accent purple --window no-titlebar
+          grep -qxF "include $HOME/.config/kitty/iglass.conf" "$HOME/.config/kitty/kitty.conf"
+          "$iglass" doctor
+          "$iglass" status
+          "$iglass" uninstall --terminal kitty
+          cmp "$HOME/.config/kitty/kitty.conf" "$RUNNER_TEMP/kitty-original"
+          cmp "$HOME/.config/kitty/dark-theme.auto.conf" "$RUNNER_TEMP/kitty-theme-original"
+          echo "kitty config and theme restored byte for byte."
 
       - name: Report a skipped Ghostty check
         if: steps.ghostty.outcome != 'success'

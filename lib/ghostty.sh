@@ -112,7 +112,7 @@ ghostty_include_line() {
 
 # True when FILE contains iglass's include lines.
 ghostty_has_include() {
-  [[ -f "$1" ]] && grep -qxF "$GHOSTTY_MARKER" "$1" && grep -qxF "$(ghostty_include_line)" "$1"
+  configfile_has_include "$1" "$GHOSTTY_MARKER" "$(ghostty_include_line)"
 }
 
 # ghostty_validate DIR — validate DIR/iglass.ghostty with DIR/themes, isolated from the user's
@@ -208,87 +208,16 @@ ghostty_export_dir() {
   ghostty_settings "$opts" >"$dir/iglass.ghostty"
 }
 
-# Write FILE's new CONTENT without breaking a symlinked dotfile: edit the link's target, keep
-# its permissions, replace it atomically.
-_ghostty_rewrite() { # FILE CONTENT_FILE
-  local file=$1 content=$2 real dir tmp mode
-  real=$file
-  if [[ -L "$file" ]]; then
-    real=$(cd "$(dirname "$file")" && cd "$(dirname "$(readlink "$file")")" && pwd)/$(basename "$(readlink "$file")")
-  fi
-  dir=$(dirname "$real")
-  tmp=$(mktemp "$dir/.iglass-config.XXXXXX") || return 1
-  cat "$content" >"$tmp" || { rm -f "$tmp"; return 1; }
-  if [[ -f "$real" ]]; then
-    mode=$(file_mode "$real")
-    chmod "${mode:-644}" "$tmp"
-  else
-    chmod 644 "$tmp"
-  fi
-  mv -f "$tmp" "$real"
-}
-
-# Add iglass's include to the user's config. Returns 1 (and prints instructions) when the
-# file can't be written, e.g. a read-only config managed by Nix or home-manager.
+# iglass's lines in the user's Ghostty config; see lib/configfile.sh.
 GHOSTTY_ADDED_NEWLINE=keep # set by ghostty_add_include: true, false, or keep (already there)
-
 ghostty_add_include() {
-  local target=$1 tmp backup_dir
-  GHOSTTY_ADDED_NEWLINE=keep
-  ghostty_has_include "$target" && return 0
-  GHOSTTY_ADDED_NEWLINE=false
-  mkdir -p "$(dirname "$target")" 2>/dev/null
-  if [[ -f "$target" ]]; then
-    backup_dir="$IGLASS_STATE_DIR/backups"
-    mkdir -p "$backup_dir"
-    [[ -f "$backup_dir/ghostty-config-before-iglass" ]] ||
-      cp "$target" "$backup_dir/ghostty-config-before-iglass"
-  fi
-  tmp=$(mktemp "$IGLASS_STATE_DIR/.ghostty-config.XXXXXX") || return 1
-  if [[ -s "$target" ]]; then
-    cat "$target" >"$tmp"
-    if [[ -n "$(tail -c 1 "$target")" ]]; then # file lacked a final newline
-      printf '\n' >>"$tmp"
-      GHOSTTY_ADDED_NEWLINE=true
-    fi
-    printf '\n' >>"$tmp"
-  fi
-  printf '%s\n%s\n' "$GHOSTTY_MARKER" "$(ghostty_include_line)" >>"$tmp"
-  if [[ ! -w "$(dirname "$target")" ]] || { [[ -e "$target" ]] && [[ ! -w "$target" ]]; } ||
-    ! _ghostty_rewrite "$target" "$tmp"; then
-    rm -f "$tmp"
-    return 1
-  fi
-  rm -f "$tmp"
+  configfile_add_include "$1" "$GHOSTTY_MARKER" "$(ghostty_include_line)" ghostty-config-before-iglass
+  local rc=$?
+  GHOSTTY_ADDED_NEWLINE=$CONFIGFILE_ADDED_NEWLINE
+  return $rc
 }
-
-# Remove iglass's two lines (and the blank line iglass added before them). STRIP_NEWLINE=true
-# drops the final newline iglass added to a file that had none, if iglass's lines were last.
-ghostty_remove_include() {
-  local target=$1 strip=${2:-false} tmp
-  ghostty_has_include "$target" || return 0
-  tmp=$(mktemp "$IGLASS_STATE_DIR/.ghostty-config.XXXXXX") || return 1
-  # Not "include": that's a reserved word in gawk, the awk on Fedora and Arch.
-  if ! awk -v marker="$GHOSTTY_MARKER" -v inc="$(ghostty_include_line)" -v strip="$strip" '
-    { lines[NR] = $0 }
-    END {
-      for (i = 1; i <= NR; i++) {
-        if (lines[i] == marker && lines[i + 1] == inc) {
-          if (n > 0 && out[n] == "") n--   # the blank separator iglass added
-          last = (i + 1 == NR)
-          i++
-          continue
-        }
-        out[++n] = lines[i]
-        last = 0
-      }
-      for (i = 1; i <= n; i++) printf "%s%s", out[i], (i < n || !(strip == "true" && last) ? "\n" : "")
-    }' "$target" >"$tmp"; then
-    rm -f "$tmp" # never replace the user's config with a half-written one
-    return 1
-  fi
-  _ghostty_rewrite "$target" "$tmp"
-  rm -f "$tmp"
+ghostty_remove_include() { # FILE [STRIP_NEWLINE]
+  configfile_remove_include "$1" "$GHOSTTY_MARKER" "$(ghostty_include_line)" "${2:-false}"
 }
 
 # ghostty_install OPTIONS_JSON
