@@ -192,19 +192,34 @@ _validate_look_options() {
   fi
 }
 
-# Clear and Frosted are contrast-checked assuming blur softens what's behind the window. On a
-# Linux desktop that doesn't blur, install defaults to Tinted and warns about the other two.
+# Clear and Frosted are contrast-checked assuming blur softens what's behind the window. When
+# the Linux desktop doesn't blur behind a terminal being installed, install defaults to Tinted
+# and warns about the other two.
 _choose_linux_variant() {
-  is_linux && [[ "${IGLASS_COMMAND:-}" == install ]] && ! desktop_blurs || return 0
-  local desktop
-  desktop=$(desktop_name)
-  desktop=${desktop:-your desktop}
+  is_linux && [[ "${IGLASS_COMMAND:-}" == install ]] || return 0
+  local t gap="" tip=""
+  # Terminals that aren't installed are skipped here; install reports them.
+  for t in $(resolve_terminals detect); do
+    case "$t" in
+      ghostty) ghostty_present || continue ;;
+      kitty) kitty_present || continue ;;
+    esac
+    gap=$(desktop_blur_gap "$t")
+    if [[ -n "$gap" ]]; then
+      tip=$(desktop_blur_tip "$t")
+      break
+    fi
+  done
+  [[ -n "$gap" ]] || return 0
   if [[ -z "$OPT_VARIANT" ]]; then
     OPT_VARIANT=tinted
-    ui_info "$desktop doesn't blur behind windows, so iglass uses Tinted, which stays readable over anything. Pick another with --variant."
+    ui_info "$gap, so iglass uses Tinted, which stays readable over anything. Pick another with --variant."
   elif [[ "$OPT_VARIANT" == clear || "$OPT_VARIANT" == frosted ]]; then
-    ui_warn "$desktop doesn't blur behind windows, so whatever is behind the terminal will show through $OPT_VARIANT sharply. Tinted or Solid stay readable."
+    ui_warn "$gap, so whatever is behind the terminal will show through $OPT_VARIANT sharply. Tinted or Solid stay readable."
+  else
+    return 0
   fi
+  [[ -z "$tip" ]] || ui_dim "$tip"
 }
 
 _validate_terminal_option() {
@@ -298,7 +313,7 @@ cmd_install() {
     installed_count=$((installed_count + 1))
   done
   if [[ $installed_count == 0 ]]; then
-    die "None of the terminals iglass supports is installed." "Install Ghostty (ghostty.org) or kitty (sw.kovidgoyal.net/kitty)."
+    die "None of the terminals iglass supports is installed." "$(terminal_get_hint kitty). $(terminal_get_hint ghostty)."
   fi
 }
 
@@ -349,8 +364,8 @@ _install_ghostty() {
   local opts=$1 v
   if ! ghostty_present; then
     is_linux && ! kitty_present && die "On Linux iglass works with Ghostty and kitty, and neither is installed." \
-      "Get Ghostty from https://ghostty.org/download or kitty from https://sw.kovidgoyal.net/kitty/"
-    die "Ghostty is not installed." "Get it from https://ghostty.org"
+      "$(terminal_get_hint kitty). $(terminal_get_hint ghostty)."
+    die "Ghostty is not installed." "$(terminal_get_hint ghostty)"
   fi
   v=$(ghostty_version)
   if [[ -n "$v" ]] && ! version_ge "$v" "$IGLASS_MIN_GHOSTTY"; then
@@ -362,7 +377,7 @@ _install_ghostty() {
 
 _install_kitty() {
   local opts=$1
-  kitty_present || die "kitty is not installed." "Get it from https://sw.kovidgoyal.net/kitty/"
+  kitty_present || die "kitty is not installed." "$(terminal_get_hint kitty)"
   if [[ "$OPT_GLASS" == native && "$OPT_TERMINAL" == kitty ]]; then
     ui_info "kitty has no Liquid Glass material; iglass uses kitty's own blur."
   fi

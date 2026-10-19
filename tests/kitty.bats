@@ -337,7 +337,7 @@ needs_macos_tools() { [[ "$(uname -s)" == Darwin ]] || skip "needs macOS tools (
   export XDG_STATE_HOME="$SANDBOX/state-home"
   XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install
   assert_success_
-  assert_output_has "GNOME doesn't blur behind windows, so iglass uses Tinted"
+  assert_output_has "GNOME doesn't blur behind windows (GNOME 51+ does), so iglass uses Tinted"
   assert_output_has "for kitty (transparency, no blur on this desktop"
   grep -qx 'background_opacity 0.82' "$K/iglass.conf"
   XDG_CURRENT_DESKTOP=KDE run "$IGLASS" install --variant frosted

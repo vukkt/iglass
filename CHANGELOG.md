@@ -3,6 +3,23 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-10-19
+
+### Added
+- **niri and GNOME 51 blur.** niri 26.04+ and GNOME 51+ blur behind apps that ask for it, which
+  kitty does from 0.46.2 and Ghostty from 1.4. iglass recognizes the desktop and its version and
+  picks Frosted where the glass is blurred, Tinted where it isn't. On niri, with a terminal that
+  doesn't ask yet, it prints the window rule that adds blur.
+- **Distributions are recognized**: Arch-based systems (Garuda, CachyOS, Manjaro, EndeavourOS),
+  Debian and Ubuntu, Fedora, and openSUSE get install hints for their own package manager, in
+  iglass and in the install script.
+- `doctor` shows the desktop and its version next to the distribution, and says per terminal
+  whether the desktop blurs behind it.
+
+### Fixed
+- On Ubuntu (`XDG_CURRENT_DESKTOP=ubuntu:GNOME`) messages named the desktop "ubuntu"; they now say
+  GNOME, and KDE is called KDE Plasma.
+
 ## [1.4.0] - 2026-10-19
 
 ### Added
@@ -105,6 +122,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.5.0]: https://github.com/vukkt/iglass/releases/tag/v1.5.0
 [1.4.0]: https://github.com/vukkt/iglass/releases/tag/v1.4.0
 [1.3.0]: https://github.com/vukkt/iglass/releases/tag/v1.3.0
 [1.2.0]: https://github.com/vukkt/iglass/releases/tag/v1.2.0

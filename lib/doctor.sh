@@ -5,7 +5,9 @@ cmd_doctor() {
   local problems=0
   ui_title "iglass doctor"
   if is_linux; then
-    ui_ok "$(os_description)"
+    local desktop
+    desktop=$(desktop_description)
+    ui_ok "$(os_description)${desktop:+ · $desktop}"
     accessibility_hints "$(state_get '(.ghostty.options // .kitty.options).variant')" \
       "$(state_get '(.ghostty.options // .kitty.options).contrast')"
     local any=0
@@ -19,7 +21,9 @@ cmd_doctor() {
     fi
     if [[ $any == 0 ]]; then
       echo
-      ui_fail "Neither Ghostty nor kitty is installed. On Linux iglass works with Ghostty (ghostty.org) and kitty (sw.kovidgoyal.net/kitty)."
+      ui_fail "Neither Ghostty nor kitty is installed. On Linux iglass works with both."
+      ui_dim "  $(terminal_get_hint kitty)"
+      ui_dim "  $(terminal_get_hint ghostty)"
       problems=1
     fi
   else
@@ -165,13 +169,7 @@ _doctor_ghostty() {
     n=$((n + 1))
   fi
   if is_linux; then
-    if desktop_blurs; then
-      ui_ok "$(desktop_name) blurs behind translucent windows"
-    else
-      local desktop
-      desktop=$(desktop_name)
-      ui_info "${desktop:-This desktop} doesn't blur behind windows (KDE Plasma and Hyprland do); Tinted or Solid read best"
-    fi
+    _doctor_linux_blur ghostty
   elif version_ge "$(macos_version)" 26 && ghostty_supports_native_glass; then
     ui_ok "Real Liquid Glass is available (macos-glass)"
   else
@@ -211,6 +209,19 @@ _doctor_ghostty() {
   return $n
 }
 
+# Whether the Linux desktop blurs behind this terminal, and how to get blur where it could.
+_doctor_linux_blur() { # ghostty|kitty
+  local gap tip
+  gap=$(desktop_blur_gap "$1")
+  if [[ -z "$gap" ]]; then
+    ui_ok "$(desktop_description) blurs behind $([[ $1 == kitty ]] && echo kitty || echo Ghostty)"
+    return
+  fi
+  ui_info "$gap; Tinted or Solid read best"
+  tip=$(desktop_blur_tip "$1")
+  [[ -z "$tip" ]] || ui_dim "$tip"
+}
+
 # kitty checks. Returns the number of problems found.
 _doctor_kitty() {
   local n=0 v dir current target f after
@@ -229,10 +240,8 @@ _doctor_kitty() {
   fi
   if is_macos; then
     ui_ok "kitty blurs behind its windows on macOS"
-  elif desktop_blurs; then
-    ui_ok "$(desktop_name) blurs behind translucent windows"
   else
-    ui_info "$(desktop_name | sed 's/^$/This desktop/') doesn't blur behind windows (KDE Plasma and Hyprland do); Tinted or Solid read best"
+    _doctor_linux_blur kitty
   fi
   [[ -n "$(state_get '.kitty.installedAt')" ]] || {
     ui_info "iglass is not installed for kitty. Run: iglass install --terminal kitty"

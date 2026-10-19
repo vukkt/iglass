@@ -56,6 +56,14 @@ fi
 
 if ! command -v jq >/dev/null 2>&1; then
   [[ $os == macos ]] && fail "jq not found. iglass needs macOS 15 or later (it includes /usr/bin/jq)."
+  # The distribution's own package manager, from ID and ID_LIKE (Garuda, CachyOS and Manjaro are Arch-like).
+  ids=" $(sed -n -e 's/^ID=//p' -e 's/^ID_LIKE=//p' "${IGLASS_OS_RELEASE:-/etc/os-release}" 2>/dev/null | tr -d '"' | tr '\n' ' ') "
+  case "$ids" in
+    *" arch "*) fail "iglass needs jq. Install it with: sudo pacman -S jq" ;;
+    *" debian "* | *" ubuntu "*) fail "iglass needs jq. Install it with: sudo apt install jq" ;;
+    *" fedora "* | *" rhel "*) fail "iglass needs jq. Install it with: sudo dnf install jq" ;;
+    *suse*) fail "iglass needs jq. Install it with: sudo zypper install jq" ;;
+  esac
   fail "iglass needs jq. Install it with your package manager, e.g. sudo apt install jq (or dnf, pacman, zypper)."
 fi
 command -v curl >/dev/null 2>&1 || [[ -n "$local_src" ]] || fail "curl not found."

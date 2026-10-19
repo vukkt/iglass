@@ -257,7 +257,7 @@ kitty_glass_label() { # OPTIONS_JSON
   read -r _ blur <<<"$(kitty_glass "$1")"
   if [[ "$blur" == 0 ]]; then
     printf 'opaque\n'
-  elif is_linux && ! desktop_blurs; then
+  elif is_linux && ! desktop_blurs kitty; then
     printf 'transparency, no blur on this desktop\n'
   else
     printf 'blur\n'
@@ -316,6 +316,6 @@ kitty_preview() { # OPTIONS_JSON
     return
   fi
   bin=$(kitty_bin)
-  [[ -n "$bin" ]] || die "kitty is not installed." "Get it from https://sw.kovidgoyal.net/kitty/"
+  [[ -n "$bin" ]] || die "kitty is not installed." "$(terminal_get_hint kitty)"
   detach "$bin" -o "background_opacity=$opacity" -o "background_blur=$blur"
 }

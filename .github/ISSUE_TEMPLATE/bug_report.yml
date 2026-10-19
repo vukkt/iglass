@@ -32,7 +32,7 @@ body:
     id: system
     attributes:
       label: System
-      description: macOS version, or Linux distribution and desktop (KDE Plasma, GNOME, Hyprland, …)
+      description: macOS version, or Linux distribution and desktop (KDE Plasma, GNOME, Hyprland, niri, …)
       placeholder: e.g. Fedora 44, KDE Plasma 6 (Wayland)
     validations:
       required: true

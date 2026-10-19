@@ -31,7 +31,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
 @test "linux: on a desktop without blur, install defaults to Tinted and says why" {
   XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install
   assert_success_
-  assert_output_has "GNOME doesn't blur behind windows, so iglass uses Tinted"
+  assert_output_has "GNOME doesn't blur behind windows (GNOME 51+ does), so iglass uses Tinted"
   assert_output_has "(transparency, no blur on this desktop, "
   grep -qx 'theme = light:iglass-tinted-light,dark:iglass-tinted-dark' "$XDG/iglass.ghostty"
   run jq -r '.ghostty.options.variant' "$XDG_STATE_HOME/iglass/state.json"
@@ -41,7 +41,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
 @test "linux: choosing Clear or Frosted without blur works, with a warning" {
   XDG_CURRENT_DESKTOP=ubuntu:GNOME run "$IGLASS" install --variant frosted
   assert_success_
-  assert_output_has "ubuntu doesn't blur behind windows"
+  assert_output_has "GNOME doesn't blur behind windows" # ubuntu:GNOME is GNOME
   grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$XDG/iglass.ghostty"
   XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install --variant solid
   [[ "$output" != *"doesn't blur"* ]]
@@ -228,7 +228,8 @@ EOF
   run "$IGLASS" doctor
   assert_success_
   assert_output_has "Fedora Linux 43"
-  assert_output_has "KDE blurs behind translucent windows"
+  assert_output_has "Fedora Linux 43 · KDE Plasma"
+  assert_output_has "KDE Plasma blurs behind Ghostty"
   assert_output_has "Included from $XDG/config.ghostty"
   [[ "$output" != *"iTerm2"* && "$output" != *"macOS"* ]]
 }
