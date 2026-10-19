@@ -3,6 +3,26 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-10-19
+
+### Added
+- **kitty support**, on macOS and Linux: the same palettes, glass levels, accents and
+  `--appearance`, with kitty's own blur (on macOS, and on Linux desktops that support it) and a
+  title bar that's part of the glass. Colors switch with light and dark mode through kitty's
+  theme files (kitty 0.38+); a user's own theme files are set aside and restored on uninstall.
+- iglass finds kitty's config the way kitty does (`KITTY_CONFIG_DIRECTORY`, `XDG_CONFIG_HOME`,
+  `~/.config`, `~/Library/Preferences`, `XDG_CONFIG_DIRS`), validates every file with kitty's own
+  config parser before changing anything, and restores `kitty.conf` byte for byte on uninstall.
+- `--terminal kitty`; `--terminal all` now covers every supported terminal you have installed and
+  skips the others. `doctor`, `status`, `preview` and `export --dir` cover kitty.
+- Prebuilt kitty files in `themes/kitty/`, and kitty screenshots.
+- CI checks the generated files with the real kitty on macOS and Linux, and runs an end-to-end
+  install and uninstall against kitty 0.49.2 on Ubuntu.
+
+### Changed
+- The status line lists only the terminals that are installed.
+- Ghostty's safe config editing moved to a shared module used by Ghostty and kitty.
+
 ## [1.3.0] - 2026-10-17
 
 ### Added
@@ -85,6 +105,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.4.0]: https://github.com/vukkt/iglass/releases/tag/v1.4.0
 [1.3.0]: https://github.com/vukkt/iglass/releases/tag/v1.3.0
 [1.2.0]: https://github.com/vukkt/iglass/releases/tag/v1.2.0
 [1.1.1]: https://github.com/vukkt/iglass/releases/tag/v1.1.1

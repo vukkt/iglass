@@ -4,11 +4,14 @@
 # Usage: tools/screenshots.sh [OUT_DIR] [SUFFIX] [TERMINAL]
 #   OUT_DIR   default docs/screenshots
 #   SUFFIX    appended to file names, e.g. "-light" (switch macOS appearance yourself first)
-#   TERMINAL  iterm2 (default) or ghostty; Ghostty shots are named ghostty-<variant><suffix>.png
+#   TERMINAL  iterm2 (default), ghostty or kitty; their shots are named <terminal>-<variant><suffix>.png
+#
+# For kitty, KITTY_APPEARANCE=dark|light picks the palette without changing the system appearance.
 #
 # Needs Screen Recording permission for the app running this script. For iTerm2, iglass must
 # be installed (bin/iglass install). For Ghostty, the themes are generated into a scratch
-# folder and Ghostty runs with only them, so the user's own Ghostty config never shows up.
+# folder and Ghostty runs with only them, so the user's own Ghostty config never shows up. kitty
+# runs the same way, from a scratch KITTY_CONFIG_DIRECTORY.
 #
 # Glass shows whatever is behind it. To keep shots identical between runs, and to never
 # capture other windows or anything personal, each shot is taken over a generated backdrop
@@ -26,6 +29,8 @@ profiles_dir="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
 backdrop_profile="$profiles_dir/iglass-screenshot-backdrop.json"
 backdrop_name="iglass Screenshot Backdrop"
 ghostty_app=/Applications/Ghostty.app
+kitty_app=/Applications/kitty.app
+kitty_pid=""
 mkdir -p "$out"
 
 # Capture area in points (iTerm2), and the backdrop around it: {left, top, right, bottom}.
@@ -35,6 +40,8 @@ margin=60
 work=$(mktemp -d)
 backdrop_window=""
 cleanup() {
+  [[ -n "$kitty_pid" ]] && kill "$kitty_pid" 2>/dev/null
+
   if [[ -n "$backdrop_window" ]]; then
     osascript -e "tell application id \"com.googlecode.iterm2\" to close (window id $backdrop_window)" \
       >/dev/null 2>&1 || true
@@ -78,7 +85,12 @@ end run
 APPLESCRIPT
 }
 
-if [[ "$terminal" == ghostty ]]; then
+if [[ "$terminal" == kitty ]]; then
+  # kitty can't be told where to open, so the backdrop covers the whole screen.
+  screen=$(osascript -l JavaScript -e 'ObjC.import("AppKit"); const f = $.NSScreen.mainScreen.frame; [f.size.width, f.size.height].join(" ")')
+  read -r sw sh <<<"$screen"
+  backdrop_window=$(open_window "$backdrop_name" 0 0 "$sw" "$sh")
+elif [[ "$terminal" == ghostty ]]; then
   # Ghostty sizes windows in cells, so give the backdrop a generous margin all around.
   backdrop_window=$(open_window "$backdrop_name" 40 60 1060 820)
 else
@@ -147,6 +159,34 @@ capture_ghostty() { # VARIANT FILE
   echo "wrote ${2#"$root"/}"
 }
 
+capture_kitty() { # VARIANT FILE
+  local bounds glass
+  glass=$(jq -r --arg v "$1" '.variants[$v] | "\(((1 - .transparency) * 100 | round) / 100) \(if .blur then .blurRadius else 0 end)"' "$root/data/palette.json")
+  read -r opacity blur <<<"$glass"
+  KITTY_CONFIG_DIRECTORY="$work/kitty" "$kitty_app/Contents/MacOS/kitty" \
+    -o "background_opacity=$opacity" -o "background_blur=$blur" \
+    -o initial_window_width=92c -o initial_window_height=27c -o remember_window_size=no \
+    -o confirm_os_window_close=0 /bin/bash -c "clear; '$demo'; sleep 600" >/dev/null 2>&1 &
+  kitty_pid=$!
+  sleep 3.5 # launch, render, and let the blur settle
+  bounds=$(window_bounds kitty)
+  [[ -n "$bounds" ]] || { echo "could not find the kitty window" >&2; exit 1; }
+  screencapture -x -R"$bounds" "$2" || {
+    echo "screencapture failed: grant Screen Recording permission and restart the terminal app" >&2
+    exit 1
+  }
+  kill "$kitty_pid" 2>/dev/null || true
+  kitty_pid=""
+  sleep 1.5
+  echo "wrote ${2#"$root"/}"
+}
+
+if [[ "$terminal" == kitty ]]; then
+  [[ -d "$kitty_app" ]] || { echo "kitty is not installed" >&2; exit 1; }
+  NO_COLOR=1 "$root/bin/iglass" export --terminal kitty --appearance "${KITTY_APPEARANCE:-auto}" \
+    --dir "$work/kitty" >/dev/null
+  printf 'include iglass.conf\n' >"$work/kitty/kitty.conf"
+fi
 if [[ "$terminal" == ghostty ]]; then
   [[ -d "$ghostty_app" ]] || { echo "Ghostty is not installed" >&2; exit 1; }
   NO_COLOR=1 "$root/bin/iglass" export --terminal ghostty --glass native --dir "$work/ghostty" >/dev/null
@@ -154,7 +194,9 @@ if [[ "$terminal" == ghostty ]]; then
 fi
 
 for variant in $(jq -r '.variantOrder[]' "$root/data/palette.json"); do
-  if [[ "$terminal" == ghostty ]]; then
+  if [[ "$terminal" == kitty ]]; then
+    capture_kitty "$variant" "$out/kitty-$variant$suffix.png"
+  elif [[ "$terminal" == ghostty ]]; then
     capture_ghostty "$variant" "$out/ghostty-$variant$suffix.png"
   else
     capture_iterm2 "$(jq -r --arg v "$variant" '.variants[$v].name' "$root/data/palette.json")" \

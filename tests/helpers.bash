@@ -30,6 +30,10 @@ setup_sandbox() {
 
   export NO_COLOR=1
   export IGLASS_PLATFORM=macos
+  # A sandboxed home: nothing a test runs can reach the real ~/.config or ~/Library.
+  export HOME="$SANDBOX/home"
+  mkdir -p "$HOME"
+  unset XDG_CONFIG_HOME XDG_CONFIG_DIRS KITTY_CONFIG_DIRECTORY KITTY_WINDOW_ID
   export IGLASS_DYNPROFILES_DIR="$SANDBOX/profiles"
   export IGLASS_STATE_DIR="$SANDBOX/state"
   export IGLASS_PREFS_DOMAIN="$SANDBOX/prefs"
@@ -42,7 +46,8 @@ setup_sandbox() {
   export IGLASS_APPLY_TIMEOUT=2
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS IGLASS_GHOSTTY_BIN
-  unset MOCK_FC_FONTS MOCK_GNOME_HIGH_CONTRAST XDG_STATE_HOME XDG_CURRENT_DESKTOP
+  unset MOCK_FC_FONTS MOCK_GNOME_HIGH_CONTRAST XDG_STATE_HOME XDG_CURRENT_DESKTOP MOCK_KITTY_REJECT
+  export IGLASS_KITTY_BIN="$SANDBOX/no-kitty" IGLASS_KITTY_APP="$SANDBOX/no-kitty.app" # fake_kitty installs one
 
   fake_iterm_version 3.7.4
   write_mocks
@@ -93,6 +98,28 @@ use_linux() {
     mkdir -p "$SANDBOX/linux"
     write_fake_ghostty_bin "$IGLASS_GHOSTTY_BIN" "${1:-1.3.1}"
   fi
+}
+
+# A kitty command (both platforms use IGLASS_KITTY_BIN in tests). Its validator mimics kitty's
+# parser: MOCK_KITTY_REJECT makes it report a bad file the way kitty does.
+fake_kitty() { # [VERSION]
+  export IGLASS_KITTY_BIN="$SANDBOX/kitty-bin/kitty"
+  mkdir -p "$SANDBOX/kitty-bin"
+  cat >"$IGLASS_KITTY_BIN" <<'KITTY'
+#!/bin/bash
+echo "kitty $*" >>"$MOCK_LOG"
+case "$1" in
+  --version) echo "kitty @VERSION@ created by Kovid Goyal" ;;
+  +runpy)
+    shift 2
+    [[ -n "${MOCK_KITTY_REJECT:-}" ]] && { echo "[0.01] Ignoring unknown config key: rejected_by_mock" >&2; exit 0; }
+    for f in "$@"; do [[ -r "$f" ]] || { echo "No such file: $f" >&2; exit 1; }; done
+    ;;
+esac
+exit 0
+KITTY
+  sed -i.bak "s/@VERSION@/${1:-0.49.2}/" "$IGLASS_KITTY_BIN" && rm -f "$IGLASS_KITTY_BIN.bak"
+  chmod +x "$IGLASS_KITTY_BIN"
 }
 
 # write_fake_ghostty_bin PATH VERSION — a ghostty whose validator mimics Ghostty's.

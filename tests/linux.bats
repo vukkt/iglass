@@ -138,10 +138,10 @@ EOF
   use_linux none
   run "$IGLASS" install
   assert_failure_
-  assert_output_has "On Linux iglass works with Ghostty"
+  assert_output_has "On Linux iglass works with Ghostty and kitty, and neither is installed"
   run "$IGLASS" doctor
   assert_failure_
-  assert_output_has "Ghostty is not installed"
+  assert_output_has "Neither Ghostty nor kitty is installed"
 }
 
 @test "linux: iTerm2 and its app-wide options are refused" {

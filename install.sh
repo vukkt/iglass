@@ -44,11 +44,13 @@ if [[ $action == uninstall ]]; then
   if [[ -L "$bin/iglass" ]]; then rm -f "$bin/iglass"; fi
   rm -rf "$share"
   say "Removed the iglass command."
-  say "If the theme is still installed, it stays until you delete its files:"
+  say "If the theme is still installed, run \`iglass uninstall\` before this next time. Its files stay"
+  say "until you delete them:"
   if [[ $os == macos ]]; then
     say "  $HOME/Library/Application Support/iTerm2/DynamicProfiles/iglass.json"
   fi
   say "  ${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/iglass.ghostty and themes/iglass-*"
+  say "  ${XDG_CONFIG_HOME:-$HOME/.config}/kitty/iglass.conf and *-theme.auto.conf (and the include in kitty.conf)"
   exit 0
 fi
 

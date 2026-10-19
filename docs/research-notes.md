@@ -138,6 +138,31 @@ renders correctly here at every iglass opacity, including 0.90 with a dark backg
 - Ghostty prints "failed to launch the requested command" for commands that exit within about
   a second, which matters when scripting it (the screenshot tool keeps its command running).
 
+## kitty
+
+Verified against kitty 0.49.2 and its source code (October 2026).
+
+- **Config location.** kitty reads one `kitty.conf`: from `$KITTY_CONFIG_DIRECTORY` when it's set,
+  otherwise from the first of `$XDG_CONFIG_HOME/kitty`, `~/.config/kitty`,
+  `~/Library/Preferences/kitty` (macOS) and `$XDG_CONFIG_DIRS/…/kitty` that has a `kitty.conf`
+  **and is writable** (so a read-only, Nix-managed folder is skipped); otherwise
+  `~/.config/kitty` (`get_config_dir` in `kitty/launcher/utils.h`).
+- **Light and dark.** kitty 0.38+ switches colors with the system using
+  `dark-theme.auto.conf`, `light-theme.auto.conf` and `no-preference-theme.auto.conf` in that
+  folder. They override every color in `kitty.conf`, and kitty resets any color a file leaves
+  out, so iglass sets them all. Only colors are read from them (`kitty/colors.py`); the macOS
+  title bar color counts as one and must be set there. GNOME reports no-preference in light mode.
+- **Glass.** `background_opacity` plus `background_blur`. On macOS kitty blurs itself and the
+  value is the radius; on Linux it needs a compositor that supports it (KDE Plasma). There is no
+  Liquid Glass material. `macos_titlebar_color background` makes the title bar part of the glass.
+  Opacity changes need a restart unless `dynamic_background_opacity` was on at launch.
+- **Includes.** Later settings win, so `include …/iglass.conf` goes at the end of `kitty.conf`.
+  An absolute path with spaces works.
+- **Validation.** kitty has no validator command, but `kitty +runpy` can call
+  `kitty.config.load_config` on a file: unknown options print "Ignoring unknown config key",
+  bad values raise. iglass treats any output or error as a rejection.
+- Padding is `window_padding_width VERTICAL HORIZONTAL`.
+
 ## Fonts
 
 SF Mono ships inside `Terminal.app/Contents/Resources/Fonts/` but is not installed system-wide

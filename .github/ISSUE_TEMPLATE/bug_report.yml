@@ -24,6 +24,8 @@ body:
         - iTerm2 (macOS)
         - Ghostty (macOS)
         - Ghostty (Linux)
+        - kitty (macOS)
+        - kitty (Linux)
     validations:
       required: true
   - type: input
