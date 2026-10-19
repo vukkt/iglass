@@ -2,8 +2,8 @@
 class Iglass < Formula
   desc "Liquid Glass theme for iTerm2, Ghostty and kitty"
   homepage "https://github.com/vukkt/iglass"
-  url "https://github.com/vukkt/iglass/archive/refs/tags/v1.3.0.tar.gz"
-  sha256 "9fe3ec8982dc1b9aab4f7d0ee04d231784334f1187bb3f183cbbd699da00c1e3"
+  url "https://github.com/vukkt/iglass/archive/refs/tags/v1.4.0.tar.gz"
+  sha256 "a3e1a65bb5d5a529afb68acf9ad9270de76bca9e6e4cd66d3e4deae87823d7bd"
   license "MIT"
 
   on_linux do
