@@ -9,7 +9,7 @@ setup() { setup_sandbox; }
 @test "--version prints the version" {
   run "$IGLASS" --version
   assert_success_
-  [[ "$output" =~ ^iglass\ [0-9]+\.[0-9]+\.[0-9]+$ ]]
+  [[ "$output" =~ ^iglass\ [0-9]+\.[0-9]+\.[0-9]+$ ]] || false
 }
 
 @test "no arguments prints usage" {
@@ -22,7 +22,7 @@ setup() { setup_sandbox; }
   run "$IGLASS" install --help
   assert_success_
   assert_output_has "Look options"
-  [[ ! -f "$(profile_file)" ]]
+  [[ ! -f "$(profile_file)" ]] || false
 }
 
 @test "unknown command fails with a hint" {
@@ -59,7 +59,7 @@ setup() { setup_sandbox; }
   run "$IGLASS" install --window round
   assert_failure_
   assert_output_has "Unknown window style"
-  [[ ! -f "$(profile_file)" ]]
+  [[ ! -f "$(profile_file)" ]] || false
 }
 
 @test "--opacity rejects non-numbers and out-of-range values" {
@@ -67,14 +67,14 @@ setup() { setup_sandbox; }
     run "$IGLASS" install --opacity "$bad"
     assert_failure_
   done
-  [[ ! -f "$(profile_file)" ]]
+  [[ ! -f "$(profile_file)" ]] || false
 }
 
 @test "--opacity below the readable minimum needs --force" {
   run "$IGLASS" install --opacity 0.5
   assert_failure_
   assert_output_has "--force"
-  [[ ! -f "$(profile_file)" ]]
+  [[ ! -f "$(profile_file)" ]] || false
 
   run "$IGLASS" install --opacity 0.5 --force
   assert_success_
@@ -85,7 +85,7 @@ setup() { setup_sandbox; }
   run "$IGLASS" install --opacity .9
   assert_success_
   run jq -r '.Profiles[] | select(.Name == "iglass Custom") | .Transparency' "$(profile_file)"
-  [[ "$output" == 0.1 ]]
+  [[ "$output" == 0.1 ]] || false
 }
 
 @test "--blur validates range and warns when high" {
@@ -102,21 +102,21 @@ setup() { setup_sandbox; }
   run "$IGLASS" install --blur 0
   assert_success_
   run jq -r '.Profiles[] | select(.Name == "iglass Custom") | "\(.Blur) \(."Blur Radius")"' "$(profile_file)"
-  [[ "$output" == "false 0" ]]
+  [[ "$output" == "false 0" ]] || false
 }
 
 @test "--font sets the font when it is installed" {
   run "$IGLASS" install --font "Menlo-Regular 14"
   assert_success_
   run jq -r '[.Profiles[]."Normal Font"] | unique | .[]' "$(profile_file)"
-  [[ "$output" == "Menlo-Regular 14" ]]
+  [[ "$output" == "Menlo-Regular 14" ]] || false
 }
 
 @test "--font without a size defaults to 13" {
   run "$IGLASS" install --font Menlo-Regular
   assert_success_
   run jq -r '.Profiles[0]."Normal Font"' "$(profile_file)"
-  [[ "$output" == "Menlo-Regular 13" ]]
+  [[ "$output" == "Menlo-Regular 13" ]] || false
 }
 
 @test "--font rejects missing fonts with a helpful message" {
@@ -127,7 +127,7 @@ setup() { setup_sandbox; }
   run "$IGLASS" install --font NoSuchFont
   assert_failure_
   assert_output_has "not installed"
-  [[ ! -f "$(profile_file)" ]]
+  [[ ! -f "$(profile_file)" ]] || false
 }
 
 @test "--font rejects display names with spaces and bad sizes" {
@@ -148,11 +148,11 @@ setup() { setup_sandbox; }
 @test "export prints a valid profiles document and writes nothing" {
   run "$IGLASS" export --accent green
   assert_success_
-  [[ ! -e "$(profile_file)" && ! -e "$IGLASS_STATE_DIR" ]]
+  [[ ! -e "$(profile_file)" && ! -e "$IGLASS_STATE_DIR" ]] || false
   printf '%s\n' "$output" >"$BATS_TEST_TMPDIR/out.json"
   plutil -convert xml1 -o /dev/null "$BATS_TEST_TMPDIR/out.json"
   run jq -r '.Profiles | length' "$BATS_TEST_TMPDIR/out.json"
-  [[ "$output" == 4 ]]
+  [[ "$output" == 4 ]] || false
 }
 
 @test "commands fail cleanly when the color data is missing" {

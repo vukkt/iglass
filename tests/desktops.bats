@@ -23,7 +23,7 @@ os_release() { # ID ID_LIKE NAME
   export XDG_CURRENT_DESKTOP=niri MOCK_NIRI=26.04
   run "$IGLASS" install --terminal kitty
   assert_success_
-  [[ "$output" != *"blur behind windows"* ]]
+  [[ "$output" != *"blur behind windows"* ]] || false
   assert_output_has "Installed iglass for kitty (blur, "
   grep -qx 'background_opacity 0.66' "$K/iglass.conf"
   run "$IGLASS" doctor
@@ -35,7 +35,7 @@ os_release() { # ID ID_LIKE NAME
   export XDG_CURRENT_DESKTOP=niri MOCK_NIRI=25.11
   run "$IGLASS" install --terminal kitty # not installed yet: just that, no talk of blur
   assert_failure_
-  [[ "$output" != *"blur"* ]]
+  [[ "$output" != *"blur"* ]] || false
   fake_kitty 0.49.2
   run "$IGLASS" install --terminal kitty
   assert_success_
@@ -69,7 +69,7 @@ os_release() { # ID ID_LIKE NAME
 
   use_linux 1.4.0
   run "$IGLASS" install --terminal ghostty
-  [[ "$output" != *"blur behind windows"* && "$output" != *"window-rule"* ]]
+  [[ "$output" != *"blur behind windows"* && "$output" != *"window-rule"* ]] || false
   assert_output_has "Updated iglass for Ghostty (blur, "
   grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$G/iglass.ghostty"
 }
@@ -88,7 +88,7 @@ os_release() { # ID ID_LIKE NAME
   use_linux 1.3.1
   run "$IGLASS" install --terminal ghostty
   assert_output_has "GNOME blurs behind apps that ask for it, which Ghostty does from 1.4"
-  [[ "$output" != *"window-rule"* ]] # window rules are a niri feature
+  [[ "$output" != *"window-rule"* ]] || false # window rules are a niri feature
 }
 
 @test "--terminal all picks Tinted when the desktop blurs behind only one of them" {

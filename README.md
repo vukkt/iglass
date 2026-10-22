@@ -2,16 +2,16 @@
 
 # iglass
 
-**Liquid Glass for your terminal.** A theme for iTerm2, Ghostty and kitty, on macOS and Linux.
+**Liquid Glass for your terminal.** A theme for iTerm2, Ghostty, kitty and Warp, on macOS and Linux.
 Translucent, built from Apple's system colors, and contrast-checked so it stays readable.
 
 [![CI](https://github.com/vukkt/iglass/actions/workflows/ci.yml/badge.svg)](https://github.com/vukkt/iglass/actions/workflows/ci.yml)
 ![Platforms: macOS 15+ and Linux](https://img.shields.io/badge/platforms-macOS%2015%2B%20%C2%B7%20Linux-black)
-![Terminals: iTerm2, Ghostty and kitty](https://img.shields.io/badge/terminals-iTerm2%20%C2%B7%20Ghostty%20%C2%B7%20kitty-black)
+![Terminals: iTerm2, Ghostty, kitty and Warp](https://img.shields.io/badge/terminals-iTerm2%20%C2%B7%20Ghostty%20%C2%B7%20kitty%20%C2%B7%20Warp-black)
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/vukkt)
 
-**[Website](https://vukkt.github.io/iglass/)** · [Install](#install) · [Usage](#usage) · [kitty](#kitty) · [Linux](#linux) · [FAQ](#faq)
+**[Website](https://vukkt.github.io/iglass/)** · [Install](#install) · [Usage](#usage) · [kitty](#kitty) · [Warp](#warp) · [Linux](#linux) · [FAQ](#faq)
 
 <img src="docs/demo.gif" width="760" alt="An iTerm2 window turning glassier and changing accent color live as iglass install commands run">
 
@@ -37,8 +37,10 @@ terminal, carefully:
 - **The closest iTerm2 allows**: transparency, blur and a palette designed to sit on top of them.
 - **kitty too**: kitty's own blur on macOS (and on Linux desktops that support it), with a title
   bar that's part of the glass.
-- **Linux too**: the same palettes in Ghostty and kitty on Linux, with transparency, and blur
-  where your desktop provides it.
+- **Warp too**: iglass's colors as Warp themes that follow light and dark mode, and the glass
+  through Warp's own window opacity and blur. Warp applies it the moment you install.
+- **Linux too**: the same palettes in Ghostty, kitty and Warp on Linux, with transparency, and
+  blur where your desktop provides it.
 - **Four glass levels**, mirroring Apple's own options: Clear, Frosted, Tinted and Solid.
 - **Follows light and dark mode** automatically, with a separate palette for each.
 - **Apple's system colors** and macOS accent colors, adjusted only where contrast requires it.
@@ -75,6 +77,23 @@ part of the glass, and colors that switch with light and dark mode (kitty 0.38+)
 
 <sub>kitty 0.49 on macOS.</sub>
 
+## Warp
+
+Warp has its own theme format and a settings file it watches, so iglass installs two Warp themes
+(**iglass Dark** and **iglass Light**, switched with light and dark mode by Warp itself) and sets
+Warp's window opacity and blur to the variant you pick. Warp applies it right away, no restart.
+Everything else in your Warp settings stays as it is, and `iglass uninstall` puts back what was
+there before.
+
+```sh
+iglass install --terminal warp                    # Frosted: 66% opaque, blur 24
+iglass install --terminal warp --variant clear    # the most see-through: 50% opaque
+```
+
+On macOS Warp blurs behind its windows. On Linux Warp has no blur setting, so the glass is
+transparency, and blur where the desktop adds it (Hyprland, or niri with a window rule). Warp
+reads `settings.toml` from its April 2026 releases on; `iglass doctor` tells you if yours is older.
+
 <details>
 <summary><b>iTerm2 gallery</b> (all four variants, light and dark)</summary>
 
@@ -87,12 +106,12 @@ part of the glass, and colors that switch with light and dark mode (kitty 0.38+)
 
 </details>
 
-| Variant | Feels like | Transparency | Ghostty glass | Readable over |
-|---|---|---|---|---|
-| **Clear** | Liquid Glass *Clear* | 50% | `macos-glass-clear` | Mid-tone wallpapers (aesthetic choice) |
-| **Frosted** · default¹ | Liquid Glass *Regular* | 34% | `macos-glass-regular` | Typical wallpapers |
-| **Tinted** | macOS *Tinted* mode | 18% | `macos-glass-regular` | Any wallpaper |
-| **Solid** | Reduce Transparency | 0% | none | Any wallpaper |
+| Variant | Feels like | Transparency | Ghostty glass | Warp opacity · blur | Readable over |
+|---|---|---|---|---|---|
+| **Clear** | Liquid Glass *Clear* | 50% | `macos-glass-clear` | 50 · 12 | Mid-tone wallpapers (aesthetic choice) |
+| **Frosted** · default¹ | Liquid Glass *Regular* | 34% | `macos-glass-regular` | 66 · 24 | Typical wallpapers |
+| **Tinted** | macOS *Tinted* mode | 18% | `macos-glass-regular` | 82 · 26 | Any wallpaper |
+| **Solid** | Reduce Transparency | 0% | none | 100 · none | Any wallpaper |
 
 <sub>¹ On Linux desktops without blur the default is Tinted; see [Linux](#linux).</sub>
 
@@ -100,18 +119,18 @@ Accents: blue, purple, pink, red, orange, yellow, green, graphite (the macOS acc
 
 ## Linux
 
-iglass works with [Ghostty](https://ghostty.org) and [kitty](https://sw.kovidgoyal.net/kitty/) on
-Linux. You get the same contrast-checked
+iglass works with [Ghostty](https://ghostty.org), [kitty](https://sw.kovidgoyal.net/kitty/) and
+[Warp](https://www.warp.dev) on Linux. You get the same contrast-checked
 palettes, the four variants, accents and light/dark switching. Liquid Glass itself is Apple's
 material, so on Linux the glass is transparency plus blur, and blur depends on your desktop:
 
-| Desktop | Blur behind kitty | Blur behind Ghostty | Light/dark switching |
-|---|---|---|---|
-| KDE Plasma | ✓ | ✓ | ✓ |
-| Hyprland | ✓ (Hyprland's own blur) | ✓ (Hyprland's own blur) | If the desktop reports it |
-| niri 26.04+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+, or now with a niri window rule | If the desktop reports it |
-| GNOME 51+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+ | ✓ |
-| GNOME 50 and earlier, others | — | — | ✓ on GNOME; elsewhere if the desktop reports it |
+| Desktop | Blur behind kitty | Blur behind Ghostty | Blur behind Warp | Light/dark switching |
+|---|---|---|---|---|
+| KDE Plasma | ✓ | ✓ | — | ✓ |
+| Hyprland | ✓ (Hyprland's own blur) | ✓ (Hyprland's own blur) | ✓ (Hyprland's own blur) | If the desktop reports it |
+| niri 26.04+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+, or now with a niri window rule | With a niri window rule | If the desktop reports it |
+| GNOME 51+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+ | — | ✓ |
+| GNOME 50 and earlier, others | — | — | — | ✓ on GNOME; elsewhere if the desktop reports it |
 
 iglass recognizes the desktop and its version. Where it blurs, the default is **Frosted**. Clear
 and Frosted rely on blur to keep text readable, so where it doesn't, iglass installs **Tinted**,
@@ -140,11 +159,13 @@ iglass install
 
 **Requirements**
 - **macOS:** macOS 15 or later, and [iTerm2](https://iterm2.com) 3.5+,
-  [Ghostty](https://ghostty.org) 1.0+ or [kitty](https://sw.kovidgoyal.net/kitty/) 0.38+.
-  Real Liquid Glass needs macOS 26+ and a recent Ghostty.
-- **Linux:** [Ghostty](https://ghostty.org/download) 1.0+ or
-  [kitty](https://sw.kovidgoyal.net/kitty/binary/) 0.38+ with its command on your PATH, plus
-  `bash`, `curl` and `jq` (`sudo apt install jq`, `sudo dnf install jq`, `sudo pacman -S jq`).
+  [Ghostty](https://ghostty.org) 1.0+, [kitty](https://sw.kovidgoyal.net/kitty/) 0.38+ or
+  [Warp](https://www.warp.dev) (April 2026 or later). Real Liquid Glass needs macOS 26+ and a
+  recent Ghostty.
+- **Linux:** [Ghostty](https://ghostty.org/download) 1.0+,
+  [kitty](https://sw.kovidgoyal.net/kitty/binary/) 0.38+ or [Warp](https://www.warp.dev/download)
+  with its command on your PATH, plus `bash`, `curl` and `jq` (`sudo apt install jq`,
+  `sudo dnf install jq`, `sudo pacman -S jq`).
 - Earlier kitty versions work too, without switching colors with light and dark mode.
 
 With Homebrew (macOS or Linux):
@@ -169,9 +190,10 @@ cd iglass && ./install.sh --local
 iglass install
 ```
 
-`iglass install` sets up the terminal you run it in. Use `--terminal iterm2`, `ghostty`, `kitty`
-or `all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles › iglass
-Frosted**. In Ghostty and kitty, quit and reopen them (they read transparency only at launch).
+`iglass install` sets up the terminal you run it in. Use `--terminal iterm2`, `ghostty`, `kitty`,
+`warp` or `all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles ›
+iglass Frosted**. In Ghostty and kitty, quit and reopen them (they read transparency only at
+launch). Warp changes right away.
 
 <details>
 <summary>Without the CLI</summary>
@@ -197,6 +219,12 @@ These files use macOS's real Liquid Glass. On Linux, use the CLI, or make your o
 `~/.config/kitty`), then add `include iglass.conf` to the end of your `kitty.conf`. If you made
 light/dark themes with `kitten themes`, these replace them, so keep a copy.
 
+**Warp:** copy `iglass-dark.yaml` and `iglass-light.yaml` from [`themes/warp`](themes/warp) to
+`~/.warp/themes/` (Linux: `~/.local/share/warp-terminal/themes/`), then add the lines in
+[`iglass-settings.toml`](themes/warp/iglass-settings.toml) to Warp's `settings.toml`, replacing any
+settings with the same names. Or just pick **iglass Dark** or **iglass Light** under Settings ›
+Appearance › Themes, and set the window opacity there.
+
 </details>
 
 ## Usage
@@ -206,7 +234,7 @@ iglass install                          # all four variants, blue accent
 iglass install --accent purple          # pick an accent
 iglass install --contrast high          # stronger colors
 iglass install --appearance dark        # always dark, even when macOS or your desktop is light
-iglass install --terminal kitty         # pick the terminal (default: the one you're in)
+iglass install --terminal warp          # pick the terminal (default: the one you're in)
 iglass install --terminal all           # every supported terminal you have installed
 iglass install --app-settings           # iTerm2 (macOS): native title bar + roomier padding (restarts iTerm2)
 iglass install --variant tinted --default   # iTerm2 (macOS): make a variant your default profile
@@ -254,6 +282,21 @@ usually `~/.config/kitty`):
 - Two lines at the end of `kitty.conf`: a comment and `include iglass.conf`. Like Ghostty's,
   backed up first and restored exactly by `iglass uninstall`.
 
+### What iglass changes in Warp
+
+- `iglass-dark.yaml` and `iglass-light.yaml` in Warp's themes folder (`~/.warp/themes` on macOS,
+  `~/.local/share/warp-terminal/themes` on Linux): the colors and accent.
+- A few settings in Warp's `settings.toml` (`~/.warp/settings.toml` on macOS,
+  `~/.config/warp-terminal/settings.toml` on Linux): the theme and following light and dark
+  mode (`[appearance.themes]`), window opacity and blur (`[appearance.window]`), the cursor
+  unless you pass `--cursor keep`, and the font with `--font`. Every other line, comment and
+  setting stays as it was.
+- `iglass uninstall` puts back the values you had, removes what iglass added, and leaves alone
+  anything you changed in Warp since. If nothing else changed, the file comes back byte for
+  byte. iglass checks every setting against the schema Warp ships before writing anything.
+- If you use Warp's Settings Sync, Warp syncs these settings to your other computers, like any
+  change you make on its settings page.
+
 ### App-wide settings (iTerm2)
 
 Some of the native feel comes from iTerm2 settings that apply to every window, not just a
@@ -296,6 +339,11 @@ guessing from version numbers.
 For **kitty**, which has no validator command, iglass loads every generated file with kitty's own
 config parser (the one kitty runs at startup) before anything touches your config.
 
+For **Warp**, iglass checks each setting it writes against the settings schema that ships inside
+Warp, so a renamed setting stops the install instead of breaking your settings. It edits
+`settings.toml` line by line, and CI validates the result against the schema of Warp's latest
+release.
+
 The CLI is plain bash plus the `jq`, `plutil` and `defaults` that ship with macOS, so there is
 nothing else to install on a Mac. On Linux it needs `jq`, and uses fontconfig to check fonts.
 More detail, including what was verified in each terminal's behavior:
@@ -319,11 +367,16 @@ No. Liquid Glass is Apple's material and only exists on macOS. On Linux, iglass 
 palettes with transparency and blur, so it looks glassy and stays readable. Blur depends on
 your desktop (see [Linux](#linux)).
 
-### Is it Liquid Glass in kitty?
+### Is it Liquid Glass in kitty or Warp?
 
-No: kitty has no access to Apple's glass material, so iglass uses kitty's own blur, which on
-macOS kitty draws itself rather than leaving it to the system. With the matching title bar, it
-looks and feels like glass. For the real material on macOS, use Ghostty.
+No: neither has access to Apple's glass material, so iglass uses their own transparency and
+blur. In kitty, with the matching title bar, it looks and feels like glass. For the real
+material on macOS, use Ghostty.
+
+### Warp didn't change.
+
+Run `iglass doctor`. Warp reads `settings.toml` from its April 2026 releases on; doctor says if
+yours is older, and shows any iglass setting you've since changed on Warp's settings page.
 
 ### Isn't glass behind text against Apple's own advice?
 
@@ -380,12 +433,12 @@ osascript -l JavaScript tools/social-card.js BACKDROP.png SHOT.png docs/social-p
 The website ([vukkt.github.io/iglass](https://vukkt.github.io/iglass/)) is `site/index.html`, published
 by the Website workflow with images taken from `docs/screenshots` at build time.
 
-Tests run in a sandbox with stand-ins for iTerm2, Ghostty and system commands, so they never
-touch your real settings. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Tests run in a sandbox with stand-ins for iTerm2, Ghostty, kitty, Warp and system commands, so
+they never touch your real settings. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2, Ghostty or
-kitty. Liquid Glass, macOS and SF Mono are trademarks of Apple Inc.
+iglass is an independent project, not affiliated with or endorsed by Apple Inc., iTerm2, Ghostty,
+kitty or Warp. Liquid Glass, macOS and SF Mono are trademarks of Apple Inc.
 
 MIT · built by [@vukkt](https://github.com/vukkt) · [sponsor](https://github.com/sponsors/vukkt)

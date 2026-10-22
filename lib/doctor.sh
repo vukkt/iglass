@@ -8,8 +8,8 @@ cmd_doctor() {
     local desktop
     desktop=$(desktop_description)
     ui_ok "$(os_description)${desktop:+ · $desktop}"
-    accessibility_hints "$(state_get '(.ghostty.options // .kitty.options).variant')" \
-      "$(state_get '(.ghostty.options // .kitty.options).contrast')"
+    accessibility_hints "$(state_get '(.ghostty.options // .kitty.options // .warp.options).variant')" \
+      "$(state_get '(.ghostty.options // .kitty.options // .warp.options).contrast')"
     local any=0
     if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
       any=1
@@ -19,11 +19,16 @@ cmd_doctor() {
       any=1
       _doctor_kitty || problems=$((problems + $?))
     fi
+    if warp_present || [[ -n "$(state_get '.warp.installedAt')" ]]; then
+      any=1
+      _doctor_warp || problems=$((problems + $?))
+    fi
     if [[ $any == 0 ]]; then
       echo
-      ui_fail "Neither Ghostty nor kitty is installed. On Linux iglass works with both."
+      ui_fail "None of Ghostty, kitty and Warp is installed. On Linux iglass works with all three."
       ui_dim "  $(terminal_get_hint kitty)"
       ui_dim "  $(terminal_get_hint ghostty)"
+      ui_dim "  $(terminal_get_hint warp)"
       problems=1
     fi
   else
@@ -136,6 +141,9 @@ _doctor_macos() {
   if kitty_present || [[ -n "$(state_get '.kitty.installedAt')" ]]; then
     _doctor_kitty || problems=$((problems + $?))
   fi
+  if warp_present || [[ -n "$(state_get '.warp.installedAt')" ]]; then
+    _doctor_warp || problems=$((problems + $?))
+  fi
 
   status=$(appsettings_status)
   case "$status" in
@@ -210,11 +218,11 @@ _doctor_ghostty() {
 }
 
 # Whether the Linux desktop blurs behind this terminal, and how to get blur where it could.
-_doctor_linux_blur() { # ghostty|kitty
+_doctor_linux_blur() { # ghostty|kitty|warp
   local gap tip
   gap=$(desktop_blur_gap "$1")
   if [[ -z "$gap" ]]; then
-    ui_ok "$(desktop_description) blurs behind $([[ $1 == kitty ]] && echo kitty || echo Ghostty)"
+    ui_ok "$(desktop_description) blurs behind $(terminal_name "$1")"
     return
   fi
   ui_info "$gap; Tinted or Solid read best"
@@ -283,6 +291,71 @@ _doctor_kitty() {
     else
       ui_ok "kitty accepts your configuration"
     fi
+  fi
+  return $n
+}
+
+# Warp checks. Returns the number of problems found.
+_doctor_warp() {
+  local n=0 v settings themes f problem key current written unknown changed=0
+  echo
+  ui_title "Warp"
+  if ! warp_present; then
+    ui_fail "Warp is not installed, but iglass files for it are. Run: iglass uninstall --terminal warp"
+    return 1
+  fi
+  v=$(warp_version)
+  if is_macos; then
+    ui_ok "Warp ${v:-(unknown version)} ($(warp_app_path))"
+  else
+    ui_ok "Warp ($(warp_bin))"
+  fi
+  if [[ -n "$(warp_schema)" ]]; then
+    ui_ok "Warp reads its settings from settings.toml"
+  else
+    ui_warn "Couldn't find Warp's settings schema; Warp before April 2026 doesn't read settings.toml. Update Warp if iglass's look doesn't show."
+  fi
+  if is_macos; then
+    ui_ok "Warp blurs behind its windows on macOS"
+  else
+    _doctor_linux_blur warp
+  fi
+  settings=$(warp_settings_file)
+  problem=$(toml_layout_problem "$settings" "$WARP_TABLES")
+  if [[ -n "$problem" ]]; then
+    ui_fail "$settings sets this in a way iglass doesn't edit: $problem"
+    ui_dim "  Put it under its [table] header the way Warp writes it, then run: iglass install --terminal warp"
+    n=$((n + 1))
+  fi
+  [[ -n "$(state_get '.warp.installedAt')" ]] || {
+    ui_info "iglass is not installed for Warp. Run: iglass install --terminal warp"
+    return $n
+  }
+  themes=$(state_get '.warp.themes')
+  for f in $WARP_THEME_FILES; do
+    if [[ ! -f "$themes/$f" ]]; then
+      ui_fail "Missing $themes/$f. Run: iglass install --terminal warp"
+      n=$((n + 1))
+    fi
+  done
+  if [[ -z "$(state_get '.warp.settings')" ]]; then
+    ui_fail "iglass couldn't change $settings when it was installed. Run: iglass install --terminal warp"
+    return $((n + 1))
+  fi
+  # Each setting iglass wrote should still be there; Warp's settings page writes to this file too.
+  while IFS= read -r key; do
+    [[ -n "$key" ]] || continue
+    current=$(toml_get "$settings" "${key% *}" "${key#* }")
+    written=$(state_get '.warp.wrote[$k]' --arg k "$key")
+    if [[ -z "$current" ]] || ! _warp_still_ours "${key% *}" "${key#* }" "$current" "$written"; then
+      ui_warn "Changed since iglass set it: ${key#* } (now: ${current:-not set}). Run iglass install --terminal warp to set it again."
+      changed=1
+    fi
+  done < <(state_get '.warp.wrote // {} | keys[]')
+  [[ $changed == 1 ]] || ui_ok "iglass's settings are in $settings"
+  if ! unknown=$(state_get '.warp.wrote // {} | keys[] | split(" ") | join("\t")' | warp_validate /dev/stdin); then
+    ui_fail "This Warp doesn't know these settings: $(tr '\n' ' ' <<<"$unknown")"
+    n=$((n + 1))
   fi
   return $n
 }

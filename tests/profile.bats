@@ -95,7 +95,7 @@ MODE_KEYS='[
 @test "the solid variant is opaque with blur off" {
   export_to "$BATS_TEST_TMPDIR/p.json"
   run jq -r '.Profiles[] | select(.Name == "iglass Solid") | "\(.Transparency) \(.Blur)"' "$BATS_TEST_TMPDIR/p.json"
-  [[ "$output" == "0 false" || "$output" == "0.0 false" ]]
+  [[ "$output" == "0 false" || "$output" == "0.0 false" ]] || false
 }
 
 @test "transparency only applies to the default background" {
@@ -109,28 +109,28 @@ MODE_KEYS='[
   export_to "$BATS_TEST_TMPDIR/p.json" --variant tinted --opacity 0.7 --force
   run jq -r '.Profiles[] | select(.Name == "iglass Custom") | "\(.Transparency) \(.Blur) \(."Blur Radius")"' \
     "$BATS_TEST_TMPDIR/p.json"
-  [[ "$output" == "0.3 true 26" ]]
+  [[ "$output" == "0.3 true 26" ]] || false
 }
 
 @test "no custom profile without --opacity or --blur" {
   export_to "$BATS_TEST_TMPDIR/p.json" --variant clear
   run jq -r '[.Profiles[].Name] | index("iglass Custom")' "$BATS_TEST_TMPDIR/p.json"
-  [[ "$output" == null ]]
+  [[ "$output" == null ]] || false
 }
 
 @test "cursor and window defaults: bar cursor, native window" {
   export_to "$BATS_TEST_TMPDIR/p.json"
   run jq -r '.Profiles[0] | "\(."Cursor Type") \(."Cursor Smooth Slide") \(."Window Type")"' "$BATS_TEST_TMPDIR/p.json"
-  [[ "$output" == "1 true 0" ]]
+  [[ "$output" == "1 true 0" ]] || false
 }
 
 @test "cursor and window styles map to iTerm2 values" {
   export_to "$BATS_TEST_TMPDIR/p.json" --cursor box --window no-titlebar
   run jq -r '.Profiles[0] | "\(."Cursor Type") \(."Window Type")"' "$BATS_TEST_TMPDIR/p.json"
-  [[ "$output" == "2 12" ]]
+  [[ "$output" == "2 12" ]] || false
   export_to "$BATS_TEST_TMPDIR/p.json" --cursor underline
   run jq -r '.Profiles[0]."Cursor Type"' "$BATS_TEST_TMPDIR/p.json"
-  [[ "$output" == 0 ]]
+  [[ "$output" == 0 ]] || false
 }
 
 @test "keep leaves cursor, window and font to the user's own profile" {
@@ -180,7 +180,7 @@ MODE_KEYS='[
   assert_success_
   assert_output_has "always dark"
   run jq -r '.options.appearance' "$(state_file)"
-  [[ "$output" == dark ]]
+  [[ "$output" == dark ]] || false
   run "$IGLASS" status
   assert_output_has "appearance dark"
 }
