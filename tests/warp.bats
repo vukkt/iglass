@@ -224,15 +224,21 @@ zoom_level = 110/' "$S" # Warp saved a setting into iglass's [appearance.window]
   assert_output_has "https://www.warp.dev/download"
 }
 
-@test "warp: found when iglass runs inside it, included in --terminal all, skipped when missing" {
+@test "warp: found when iglass runs inside it" {
   TERM_PROGRAM=WarpTerminal run "$IGLASS" install
   assert_success_
   assert_output_has "Installed iglass for Warp"
   [[ ! -e "$(profile_file)" ]] || false
+}
+
+# On Linux, so --terminal all doesn't include iTerm2 (whose files need macOS's plutil).
+@test "warp: included in --terminal all, skipped when missing, removed by uninstall" {
+  use_linux none
+  fake_warp
   run "$IGLASS" install --terminal all
-  assert_output_has "Updated iglass for Warp"
+  assert_output_has "Installed iglass for Warp"
   assert_output_has "kitty isn't installed; skipped."
-  rm -rf "$IGLASS_WARP_APP"
+  rm -rf "$SANDBOX/warp"
   run "$IGLASS" install --terminal all
   assert_output_has "Warp isn't installed; skipped."
   run "$IGLASS" uninstall
