@@ -22,10 +22,10 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   run "$IGLASS" install
   assert_success_
   assert_output_has "Installed iglass for Ghostty (blur, "
-  [[ -f "$XDG/iglass.ghostty" && -f "$XDG/themes/iglass-frosted-dark" ]]
-  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]]
-  [[ -f "$XDG_STATE_HOME/iglass/state.json" ]]
-  [[ ! -e "$(profile_file)" ]]
+  [[ -f "$XDG/iglass.ghostty" && -f "$XDG/themes/iglass-frosted-dark" ]] || false
+  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]] || false
+  [[ -f "$XDG_STATE_HOME/iglass/state.json" ]] || false
+  [[ ! -e "$(profile_file)" ]] || false
 }
 
 @test "linux: on a desktop without blur, install defaults to Tinted and says why" {
@@ -35,7 +35,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   assert_output_has "(transparency, no blur on this desktop, "
   grep -qx 'theme = light:iglass-tinted-light,dark:iglass-tinted-dark' "$XDG/iglass.ghostty"
   run jq -r '.ghostty.options.variant' "$XDG_STATE_HOME/iglass/state.json"
-  [[ "$output" == tinted ]]
+  [[ "$output" == tinted ]] || false
 }
 
 @test "linux: choosing Clear or Frosted without blur works, with a warning" {
@@ -44,13 +44,13 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   assert_output_has "GNOME doesn't blur behind windows" # ubuntu:GNOME is GNOME
   grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$XDG/iglass.ghostty"
   XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install --variant solid
-  [[ "$output" != *"doesn't blur"* ]]
+  [[ "$output" != *"doesn't blur"* ]] || false
 }
 
 @test "linux: KDE Plasma and Hyprland keep Frosted as the default" {
   for desktop in KDE Hyprland; do
     XDG_CURRENT_DESKTOP=$desktop run "$IGLASS" install
-    [[ "$output" != *"doesn't blur"* ]]
+    [[ "$output" != *"doesn't blur"* ]] || false
     grep -qx 'theme = light:iglass-frosted-light,dark:iglass-frosted-dark' "$XDG/iglass.ghostty"
   done
 }
@@ -67,7 +67,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
 @test "linux: uses blur, never Liquid Glass" {
   "$IGLASS" install
   run grep -rq "macos-glass" "$XDG/themes"
-  [[ "$status" -eq 1 ]]
+  [[ "$status" -eq 1 ]] || false
   grep -qx 'background-blur = 24' "$XDG/themes/iglass-frosted-dark"
   grep -qx 'background-blur = false' "$XDG/themes/iglass-solid-dark"
   run "$IGLASS" install --glass native
@@ -81,11 +81,11 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   chmod 600 "$XDG/config.ghostty"
   cp "$XDG/config.ghostty" "$BATS_TEST_TMPDIR/original"
   "$IGLASS" install
-  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]]
-  [[ -n "$(find "$XDG/config.ghostty" -perm 600)" ]]
+  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]] || false
+  [[ -n "$(find "$XDG/config.ghostty" -perm 600)" ]] || false
   "$IGLASS" uninstall
   cmp "$XDG/config.ghostty" "$BATS_TEST_TMPDIR/original"
-  [[ ! -e "$XDG/iglass.ghostty" && ! -e "$XDG/themes" ]]
+  [[ ! -e "$XDG/iglass.ghostty" && ! -e "$XDG/themes" ]] || false
 }
 
 @test "linux: a failing awk never empties the config on uninstall" {
@@ -111,7 +111,7 @@ EOF
   run "$IGLASS" uninstall
   assert_success_
   run find "$SANDBOX/xdg" -mindepth 1
-  [[ -z "$output" ]]
+  [[ -z "$output" ]] || false
   run "$IGLASS" uninstall
   assert_success_
   assert_output_has "not installed for Ghostty"
@@ -122,14 +122,14 @@ EOF
   printf 'font-size = 14\n' >"$XDG/config"
   printf 'font-size = 15\n' >"$AS/config"
   "$IGLASS" install
-  [[ "$(include_count "$XDG/config")" == 1 ]]
-  [[ "$(include_count "$AS/config")" == 0 ]]
+  [[ "$(include_count "$XDG/config")" == 1 ]] || false
+  [[ "$(include_count "$AS/config")" == 0 ]] || false
 }
 
 @test "linux: Ghostty's version comes from ghostty --version" {
   use_linux 1.2.0
   "$IGLASS" install
-  [[ "$(include_count "$XDG/config")" == 1 ]] # file name used before Ghostty 1.2.3
+  [[ "$(include_count "$XDG/config")" == 1 ]] || false # file name used before Ghostty 1.2.3
   run "$IGLASS" status
   assert_output_has "Ghostty 1.2.0 · Fedora Linux 43"
 }
@@ -138,10 +138,10 @@ EOF
   use_linux none
   run "$IGLASS" install
   assert_failure_
-  assert_output_has "On Linux iglass works with Ghostty and kitty, and neither is installed"
+  assert_output_has "On Linux iglass works with Ghostty, kitty and Warp, and none of them is installed"
   run "$IGLASS" doctor
   assert_failure_
-  assert_output_has "Neither Ghostty nor kitty is installed"
+  assert_output_has "None of Ghostty, kitty and Warp is installed"
 }
 
 @test "linux: iTerm2 and its app-wide options are refused" {
@@ -155,13 +155,13 @@ EOF
   assert_failure_
   run "$IGLASS" preview --terminal iterm2
   assert_failure_
-  [[ ! -e "$XDG" ]]
+  [[ ! -e "$XDG" ]] || false
 }
 
 @test "linux: --terminal all means Ghostty" {
   run "$IGLASS" install --terminal all
   assert_success_
-  [[ -f "$XDG/iglass.ghostty" && ! -e "$(profile_file)" ]]
+  [[ -f "$XDG/iglass.ghostty" && ! -e "$(profile_file)" ]] || false
 }
 
 @test "linux: export works for both terminals, including native glass for a Mac" {
@@ -180,7 +180,7 @@ EOF
   "$IGLASS" install --window no-titlebar
   grep -qx 'gtk-titlebar = false' "$XDG/iglass.ghostty"
   run grep -q 'macos-titlebar-style' "$XDG/iglass.ghostty"
-  [[ "$status" -eq 1 ]]
+  [[ "$status" -eq 1 ]] || false
 }
 
 @test "linux: fonts are checked with fontconfig" {
@@ -212,7 +212,7 @@ EOF
   MOCK_GNOME_HIGH_CONTRAST=1 run "$IGLASS" install
   assert_output_has "High contrast is on in your desktop settings"
   run "$IGLASS" install
-  [[ "$output" != *"High contrast"* ]]
+  [[ "$output" != *"High contrast"* ]] || false
 }
 
 @test "linux: status, list and doctor show Ghostty only" {
@@ -221,7 +221,7 @@ EOF
   assert_success_
   assert_output_has "accent green"
   assert_output_has "glass blur"
-  [[ "$output" != *"iTerm2"* ]]
+  [[ "$output" != *"iTerm2"* ]] || false
   run "$IGLASS" list
   assert_output_has "frosted"
   assert_output_has "green (installed)"
@@ -231,7 +231,7 @@ EOF
   assert_output_has "Fedora Linux 43 · KDE Plasma"
   assert_output_has "KDE Plasma blurs behind Ghostty"
   assert_output_has "Included from $XDG/config.ghostty"
-  [[ "$output" != *"iTerm2"* && "$output" != *"macOS"* ]]
+  [[ "$output" != *"iTerm2"* && "$output" != *"macOS"* ]] || false
 }
 
 @test "linux: no macOS tools are called" {

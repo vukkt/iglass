@@ -163,6 +163,37 @@ Verified against kitty 0.49.2 and its source code (October 2026).
   bad values raise. iglass treats any output or error as a rejection.
 - Padding is `window_padding_width VERTICAL HORIZONTAL`.
 
+## Warp
+
+Verified against Warp v0.2026.10.14.08.27.stable_03 (its Linux package and settings schema) and
+its open-source client (`warpdotdev/warp`, October 2026).
+
+- **Settings file.** Warp keeps its settings in `settings.toml` (`~/.warp/settings.toml` on
+  macOS, `$XDG_CONFIG_HOME/warp-terminal/settings.toml` on Linux), added in the April 2026
+  releases. It watches the file and applies changes at once, and its settings page writes to
+  the same file. Every release ships `settings_schema.json` (`Warp.app/Contents/Resources`,
+  `/opt/warpdotdev/warp-terminal/resources`): settings nest under `properties`, one level per
+  TOML table, with snake_case keys. iglass checks its keys against it, and takes its presence
+  as the sign that a Warp reads `settings.toml`.
+- **Themes.** Custom themes are YAML files in `~/.warp/themes` (macOS) or
+  `$XDG_DATA_HOME/warp-terminal/themes` (Linux): `name`, `accent`, `cursor`, `background`,
+  `foreground`, `details` (`darker` or `lighter`) and `terminal_colors.normal` / `.bright` with
+  eight colors each. Hex colors must be quoted, since a bare `#` starts a YAML comment.
+- **Selecting them.** `[appearance.themes]` `theme = { custom = { name, path } }`;
+  `system_theme = true` with `selected_system_themes = { light = …, dark = … }` follows the
+  system. Warp accepts an absolute path, or one relative to its themes folder, which is how it
+  writes paths back (`portable_custom_theme_storage_string` in `app/src/themes/theme.rs`). A
+  `~/…` path, as in Warp's own docs example, is read as relative to the themes folder, so iglass
+  doesn't use one.
+- **Glass.** `[appearance.window]` `override_opacity` (1–100; 1 is the floor because Metal
+  shows stale frames at 0) and `override_blur` (radius 1–64, macOS only; `window_settings.rs`).
+  On Linux Warp doesn't ask the compositor for blur: KDE Plasma and GNOME 51 don't blur behind
+  it, Hyprland does, and niri can with a window rule for app id `dev.warp.Warp`.
+- **TOML 1.1.** Inline tables may span lines, so iglass's editor treats a `{` or `[` value as
+  ending where its brackets balance.
+- **Other.** Warp sets `TERM_PROGRAM=WarpTerminal`. Its settings sync between computers when
+  Settings Sync is on; a custom theme syncs only when its file is inside the themes folder.
+
 ## Fonts
 
 SF Mono ships inside `Terminal.app/Contents/Resources/Fonts/` but is not installed system-wide

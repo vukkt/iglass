@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "appearance": {
+      "type": "object",
+      "properties": {
+        "themes": {
+          "type": "object",
+          "properties": {
+            "selected_system_themes": {
+              "description": "The themes to use for system light and dark modes.",
+              "type": null
+            },
+            "system_theme": {
+              "description": "Whether to match the system light/dark theme.",
+              "type": "boolean"
+            },
+            "theme": {
+              "description": "The color theme.",
+              "type": null
+            }
+          }
+        },
+        "window": {
+          "type": "object",
+          "properties": {
+            "backdrop": {
+              "description": "The system backdrop material applied to the window background.",
+              "type": null
+            },
+            "left_panel_visibility_across_tabs": {
+              "description": "Whether the left panel visibility is shared across all tabs.",
+              "type": "boolean"
+            },
+            "new_windows_num_columns": {
+              "description": "The number of columns for new windows when using a custom size.",
+              "type": "integer"
+            },
+            "new_windows_num_rows": {
+              "description": "The number of rows for new windows when using a custom size.",
+              "type": "integer"
+            },
+            "open_windows_at_custom_size": {
+              "description": "Whether to open new windows at a custom size instead of the default.",
+              "type": "boolean"
+            },
+            "override_blur": {
+              "description": "The blur radius applied to the window background.",
+              "type": "integer"
+            },
+            "override_blur_texture": {
+              "description": "Deprecated legacy setting for the Acrylic window backdrop.",
+              "type": "boolean"
+            },
+            "override_opacity": {
+              "description": "The opacity of the window background, from 1 to 100 percent.",
+              "type": "integer"
+            },
+            "zoom_level": {
+              "description": "The zoom level for the window, as a percentage.",
+              "type": "integer"
+            }
+          }
+        },
+        "cursor": {
+          "type": "object",
+          "properties": {
+            "cursor_blink": {
+              "description": "Whether the cursor blinks.",
+              "type": null
+            },
+            "cursor_display_type": {
+              "description": "The visual style of the cursor.",
+              "type": null
+            }
+          }
+        },
+        "text": {
+          "type": "object",
+          "properties": {
+            "ai_font_name": {
+              "description": "The font used for AI-generated content.",
+              "type": "string"
+            },
+            "enforce_minimum_contrast": {
+              "description": "Whether to enforce minimum contrast for text readability.",
+              "type": null
+            },
+            "font_name": {
+              "description": "The monospace font used in the terminal.",
+              "type": "string"
+            },
+            "font_size": {
+              "description": "The size of the monospace font in the terminal.",
+              "type": "number"
+            },
+            "font_weight": {
+              "description": "The weight of the monospace font in the terminal.",
+              "type": null
+            },
+            "ligature_rendering_enabled": {
+              "description": "Whether to render font ligatures in the terminal.",
+              "type": "boolean"
+            },
+            "line_height_ratio": {
+              "description": "The line height ratio for terminal text.",
+              "type": "number"
+            },
+            "match_ai_font": {
+              "description": "Whether the AI font automatically matches the terminal font.",
+              "type": "boolean"
+            },
+            "match_notebook_to_monospace_font_size": {
+              "description": "Whether the notebook font size matches the terminal font size.",
+              "type": "boolean"
+            },
+            "notebook_font_size": {
+              "description": "The font size used in notebooks.",
+              "type": "number"
+            },
+            "use_thin_strokes": {
+              "description": "Whether to use thin font strokes on macOS.",
+              "type": null
+            }
+          }
+        }
+      }
+    }
+  }
+}

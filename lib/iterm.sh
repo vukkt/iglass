@@ -92,11 +92,19 @@ detect_terminal() {
     printf 'kitty\n'
     return
   fi
+  if [[ "${TERM_PROGRAM:-}" == WarpTerminal ]]; then
+    printf 'warp\n'
+    return
+  fi
   if is_linux; then
-    if [[ "${TERM_PROGRAM:-}" == ghostty ]] || ghostty_present || ! kitty_present; then
+    if [[ "${TERM_PROGRAM:-}" == ghostty ]] || ghostty_present; then
       printf 'ghostty\n'
-    else
+    elif kitty_present; then
       printf 'kitty\n'
+    elif warp_present; then
+      printf 'warp\n'
+    else
+      printf 'ghostty\n'
     fi
     return
   fi
@@ -110,6 +118,8 @@ detect_terminal() {
         printf 'ghostty\n'
       elif kitty_present; then
         printf 'kitty\n'
+      elif warp_present; then
+        printf 'warp\n'
       else
         printf 'iterm2\n'
       fi

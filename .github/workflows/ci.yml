@@ -61,7 +61,7 @@ jobs:
         run: |
           sudo apt-get update
           # gawk, the awk most desktop distros use, instead of Ubuntu's default mawk.
-          sudo apt-get install -y jq shellcheck bats gawk
+          sudo apt-get install -y jq shellcheck bats gawk python3-jsonschema python3-yaml
           awk --version | head -1
 
       # Ghostty has no official Ubuntu package; the Snap is the easiest way to get the real
@@ -84,6 +84,19 @@ jobs:
           sudo mkdir -p /opt/kitty && sudo tar -xJf "$RUNNER_TEMP/kitty.txz" -C /opt/kitty
           sudo ln -sf /opt/kitty/bin/kitty /usr/local/bin/kitty
           kitty --version
+
+      # Warp's current Linux release, unpacked but not installed (no package scripts run): iglass
+      # finds warp-terminal and the settings schema Warp ships next to it, and the checks below
+      # validate what iglass writes against that schema. Always the latest release, so a
+      # setting Warp renames shows up here first.
+      - name: Get Warp
+        id: warp
+        continue-on-error: true
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/warp.deb" 'https://app.warp.dev/download?package=deb'
+          dpkg-deb -f "$RUNNER_TEMP/warp.deb" Version
+          dpkg-deb -x "$RUNNER_TEMP/warp.deb" "$RUNNER_TEMP/warp"
+          test -f "$RUNNER_TEMP/warp/opt/warpdotdev/warp-terminal/resources/settings_schema.json"
 
       - name: Tool versions
         run: |
@@ -142,6 +155,37 @@ jobs:
           cmp "$HOME/.config/kitty/kitty.conf" "$RUNNER_TEMP/kitty-original"
           cmp "$HOME/.config/kitty/dark-theme.auto.conf" "$RUNNER_TEMP/kitty-theme-original"
           echo "kitty config and theme restored byte for byte."
+
+      - name: End to end with the real Warp's settings schema
+        if: steps.warp.outcome == 'success'
+        run: |
+          export HOME="$RUNNER_TEMP/whome" XDG_CURRENT_DESKTOP=Hyprland
+          export IGLASS_WARP_BIN="$RUNNER_TEMP/warp/opt/warpdotdev/warp-terminal/warp"
+          unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME
+          schema="$RUNNER_TEMP/warp/opt/warpdotdev/warp-terminal/resources/settings_schema.json"
+          settings="$HOME/.config/warp-terminal/settings.toml"
+          mkdir -p "$(dirname "$settings")"
+          printf '# mine\n[appearance.text]\nfont_size = 14.0\n\n[appearance.themes]\ntheme = "dracula"' >"$settings"
+          cp "$settings" "$RUNNER_TEMP/warp-original"
+          ./install.sh --local
+          iglass=$HOME/.local/bin/iglass
+          for look in "--variant clear --accent purple" "--appearance light --cursor box" "--opacity 0.7 --blur 30"; do
+            "$iglass" install --terminal warp $look
+            python3 tools/check_warp.py "$schema" "$settings" "$HOME"/.local/share/warp-terminal/themes/*.yaml
+          done
+          # The macOS settings (with blur) and the prebuilt files, against the same schema.
+          IGLASS_PLATFORM=macos "$iglass" export --terminal warp --dir "$RUNNER_TEMP/warp-mac"
+          python3 tools/check_warp.py "$schema" "$RUNNER_TEMP/warp-mac/iglass-settings.toml" "$RUNNER_TEMP"/warp-mac/*.yaml
+          python3 tools/check_warp.py "$schema" themes/warp/iglass-settings.toml themes/warp/*.yaml
+          "$iglass" doctor
+          "$iglass" status
+          "$iglass" uninstall --terminal warp
+          cmp "$settings" "$RUNNER_TEMP/warp-original"
+          echo "Warp settings restored byte for byte."
+
+      - name: Report a skipped Warp check
+        if: steps.warp.outcome != 'success'
+        run: echo "::warning::Warp could not be downloaded; the real-Warp checks were skipped."
 
       - name: Report a skipped Ghostty check
         if: steps.ghostty.outcome != 'success'

@@ -51,6 +51,11 @@ if [[ $action == uninstall ]]; then
   fi
   say "  ${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/iglass.ghostty and themes/iglass-*"
   say "  ${XDG_CONFIG_HOME:-$HOME/.config}/kitty/iglass.conf and *-theme.auto.conf (and the include in kitty.conf)"
+  if [[ $os == macos ]]; then
+    say "  $HOME/.warp/themes/iglass-*.yaml (and iglass's settings in ~/.warp/settings.toml)"
+  else
+    say "  ${XDG_DATA_HOME:-$HOME/.local/share}/warp-terminal/themes/iglass-*.yaml (and iglass's settings in Warp's settings.toml)"
+  fi
   exit 0
 fi
 

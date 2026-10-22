@@ -14,10 +14,10 @@ setup() {
 @test "with iTerm2 closed, settings apply immediately" {
   run "$IGLASS" install --app-settings
   assert_success_
-  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
-  [[ "$(pref TerminalMargin)" == 12 ]]
-  [[ "$(pref TerminalVMargin)" == 10 ]]
-  [[ "$(pref 'Default Bookmark Guid')" == USER-DEFAULT ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]] || false
+  [[ "$(pref TerminalMargin)" == 12 ]] || false
+  [[ "$(pref TerminalVMargin)" == 10 ]] || false
+  [[ "$(pref 'Default Bookmark Guid')" == USER-DEFAULT ]] || false
   refute_logged "launchctl submit"
   run "$IGLASS" status
   assert_output_has "App-wide settings applied"
@@ -26,19 +26,19 @@ setup() {
 @test "uninstall restores exactly: old values back, new keys removed" {
   "$IGLASS" install --app-settings --default
   "$IGLASS" uninstall --restore-app-settings
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]]
-  [[ "$(pref 'Default Bookmark Guid')" == USER-DEFAULT ]]
-  [[ "$(pref TerminalMargin)" == "<absent>" ]]
-  [[ "$(pref TerminalVMargin)" == "<absent>" ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false
+  [[ "$(pref 'Default Bookmark Guid')" == USER-DEFAULT ]] || false
+  [[ "$(pref TerminalMargin)" == "<absent>" ]] || false
+  [[ "$(pref TerminalVMargin)" == "<absent>" ]] || false
   run jq -r '.appSettings // "none"' "$(state_file)"
-  [[ "$output" == none ]]
+  [[ "$output" == none ]] || false
 }
 
 @test "restored values keep their original types" {
   "$IGLASS" install --app-settings
   "$IGLASS" uninstall --restore-app-settings
   run defaults read-type "$IGLASS_PREFS_DOMAIN" TabStyleWithAutomaticOption
-  [[ "$output" == "Type is integer" ]]
+  [[ "$output" == "Type is integer" ]] || false
 }
 
 @test "re-applying never overwrites the recorded originals" {
@@ -46,7 +46,7 @@ setup() {
   "$IGLASS" install --app-settings --default
   run jq -r '.appSettings.previous.TabStyleWithAutomaticOption.value,
              .appSettings.previous["Default Bookmark Guid"].value' "$(state_file)"
-  [[ "$output" == $'1\nUSER-DEFAULT' ]]
+  [[ "$output" == $'1\nUSER-DEFAULT' ]] || false
 }
 
 @test "--default points at the chosen variant, or the custom profile" {
@@ -54,21 +54,21 @@ setup() {
   tinted=$(jq -r '.variants.tinted.guid' "$REPO_ROOT/data/palette.json")
   custom=$(jq -r '.custom.guid' "$REPO_ROOT/data/palette.json")
   "$IGLASS" install --variant tinted --default
-  [[ "$(pref 'Default Bookmark Guid')" == "$tinted" ]]
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] # --default alone leaves the theme
+  [[ "$(pref 'Default Bookmark Guid')" == "$tinted" ]] || false
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false # --default alone leaves the theme
   "$IGLASS" install --variant tinted --opacity 0.9 --default
-  [[ "$(pref 'Default Bookmark Guid')" == "$custom" ]]
+  [[ "$(pref 'Default Bookmark Guid')" == "$custom" ]] || false
 }
 
 @test "the first backup, taken before any change, is kept" {
   "$IGLASS" install --app-settings
   "$IGLASS" install --app-settings
   local first="$IGLASS_STATE_DIR/backups/iterm2-prefs-before-iglass.plist"
-  [[ -f "$first" ]]
+  [[ -f "$first" ]] || false
   run plutil -extract TabStyleWithAutomaticOption raw -o - "$first"
-  [[ "$output" == 1 ]]
+  [[ "$output" == 1 ]] || false
   run ls "$IGLASS_STATE_DIR/backups"
-  [[ $(wc -l <<<"$output") -eq 2 ]]
+  [[ $(wc -l <<<"$output") -eq 2 ]] || false
 }
 
 @test "iTerm2 running and no terminal to ask: refuses and changes nothing" {
@@ -76,7 +76,7 @@ setup() {
   run "$IGLASS" install --app-settings </dev/null
   assert_failure_
   assert_output_has "Nothing changed"
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false
   refute_logged "launchctl submit"
 }
 
@@ -89,7 +89,7 @@ setup() {
   assert_logged "osascript quit"
   assert_logged "open -b com.googlecode.iterm2"
   assert_logged "launchctl remove com.github.vukkt.iglass.apply."
-  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]] || false
   run "$IGLASS" status
   assert_output_has "App-wide settings applied"
 }
@@ -99,7 +99,7 @@ setup() {
   export MOCK_QUIT_REFUSE=1 IGLASS_APPLY_TIMEOUT=1
   run "$IGLASS" install --app-settings --yes
   assert_success_ # the helper runs in the background; the CLI reports later
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false
   assert_logged "osascript notify"
   refute_logged "open -b"
   run "$IGLASS" status
@@ -111,15 +111,15 @@ setup() {
   iterm_start
   export MOCK_QUIT_REFUSE=1 IGLASS_APPLY_TIMEOUT=1
   "$IGLASS" uninstall --restore-app-settings --yes
-  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]] || false
   run jq -r '.appSettings.previous.TabStyleWithAutomaticOption.value' "$(state_file)"
-  [[ "$output" == 1 ]]
+  [[ "$output" == 1 ]] || false
 
   unset MOCK_QUIT_REFUSE
   iterm_stop
   run "$IGLASS" uninstall --restore-app-settings
   assert_success_
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false
 }
 
 @test "uninstall --keep-app-settings leaves preferences alone" {
@@ -128,14 +128,14 @@ setup() {
   assert_success_
   assert_output_has "Kept iTerm2's app-wide settings"
   assert_output_has "pick a new default"
-  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]] || false
 }
 
 @test "uninstall without a terminal to ask keeps settings (never guesses yes)" {
   "$IGLASS" install --app-settings
   run "$IGLASS" uninstall </dev/null
   assert_success_
-  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 4 ]] || false
 }
 
 @test "refuses when iTerm2 loads preferences from a custom folder" {
@@ -143,7 +143,7 @@ setup() {
   run "$IGLASS" install --app-settings
   assert_failure_
   assert_output_has "custom folder"
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false
 }
 
 @test "refuses to manage a key with an unexpected type" {
@@ -151,7 +151,7 @@ setup() {
   run "$IGLASS" install --app-settings
   assert_failure_
   assert_output_has "unexpected type"
-  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]]
+  [[ "$(pref TabStyleWithAutomaticOption)" == 1 ]] || false
 }
 
 @test "a new change waits while a previous one is still pending" {

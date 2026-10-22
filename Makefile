@@ -14,13 +14,15 @@ palettes:
 	python3 tools/build_palettes.py
 
 ## Rebuild the prebuilt files for people who don't use the CLI: themes/iglass.json (iTerm2)
-## themes/ghostty/ (Ghostty, real Liquid Glass for macOS 26+) and themes/kitty/
+## themes/ghostty/ (Ghostty, real Liquid Glass for macOS 26+), themes/kitty/ and themes/warp/
 themes:
 	bin/iglass export --terminal iterm2 > themes/iglass.json
 	rm -rf themes/ghostty
 	NO_COLOR=1 bin/iglass export --terminal ghostty --glass native --dir themes/ghostty >/dev/null
 	rm -rf themes/kitty
 	NO_COLOR=1 bin/iglass export --terminal kitty --dir themes/kitty >/dev/null
+	rm -rf themes/warp
+	NO_COLOR=1 IGLASS_PLATFORM=macos bin/iglass export --terminal warp --dir themes/warp >/dev/null
 
 lint:
 	shellcheck $(SHELL_FILES)
@@ -42,5 +44,9 @@ check-generated:
 	diff -r themes/kitty .check-kitty >/dev/null || \
 		(rm -rf .check-kitty; echo "themes/kitty is out of date: run make themes" >&2; exit 1)
 	rm -rf .check-kitty
+	rm -rf .check-warp && NO_COLOR=1 IGLASS_PLATFORM=macos bin/iglass export --terminal warp --dir .check-warp >/dev/null
+	diff -r themes/warp .check-warp >/dev/null || \
+		(rm -rf .check-warp; echo "themes/warp is out of date: run make themes" >&2; exit 1)
+	rm -rf .check-warp
 
 check: lint check-generated test

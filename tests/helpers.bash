@@ -19,6 +19,8 @@
 #   MOCK_GNOME_HIGH_CONTRAST=1   GNOME's high-contrast setting is on
 #   MOCK_NIRI=26.04              version reported by niri --version (unset: niri isn't there)
 #   MOCK_GNOME=51.1              version reported by gnome-shell --version (unset: not there)
+#
+# fake_ghostty, fake_kitty and fake_warp install stand-ins for those terminals.
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 IGLASS="$REPO_ROOT/bin/iglass"
@@ -49,8 +51,9 @@ setup_sandbox() {
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS IGLASS_GHOSTTY_BIN
   unset MOCK_FC_FONTS MOCK_GNOME_HIGH_CONTRAST XDG_STATE_HOME XDG_CURRENT_DESKTOP MOCK_KITTY_REJECT
-  unset MOCK_NIRI MOCK_GNOME
+  unset MOCK_NIRI MOCK_GNOME XDG_DATA_HOME
   export IGLASS_KITTY_BIN="$SANDBOX/no-kitty" IGLASS_KITTY_APP="$SANDBOX/no-kitty.app" # fake_kitty installs one
+  export IGLASS_WARP_APP="$SANDBOX/no-warp.app" IGLASS_WARP_BIN="$SANDBOX/no-warp" # fake_warp installs one
 
   fake_iterm_version 3.7.4
   write_mocks
@@ -123,6 +126,36 @@ exit 0
 KITTY
   sed -i.bak "s/@VERSION@/${1:-0.49.2}/" "$IGLASS_KITTY_BIN" && rm -f "$IGLASS_KITTY_BIN.bak"
   chmod +x "$IGLASS_KITTY_BIN"
+}
+
+# Warp: Warp.app on macOS, a warp-terminal command on Linux, each with the settings schema Warp
+# ships (tests/fixtures holds the part of Warp's real schema iglass uses). Pass "no-schema" for a
+# Warp from before settings.toml.
+fake_warp() { # [no-schema]
+  local resources
+  if [[ "$IGLASS_PLATFORM" == linux ]]; then
+    export IGLASS_WARP_BIN="$SANDBOX/warp/warp-terminal"
+    mkdir -p "$SANDBOX/warp"
+    printf '#!/bin/bash\necho "warp-terminal $*" >>"$MOCK_LOG"\n' >"$IGLASS_WARP_BIN"
+    chmod +x "$IGLASS_WARP_BIN"
+    resources="$SANDBOX/warp/resources"
+  else
+    export IGLASS_WARP_APP="$SANDBOX/Warp.app"
+    mkdir -p "$IGLASS_WARP_APP/Contents"
+    cat >"$IGLASS_WARP_APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>dev.warp.Warp-Stable</string>
+  <key>CFBundleShortVersionString</key><string>0.2026.10.14.08.27.03</string>
+  <key>WarpVersion</key><string>v0.2026.10.14.08.27.stable_03</string>
+</dict></plist>
+PLIST
+    resources="$IGLASS_WARP_APP/Contents/Resources"
+  fi
+  if [[ "${1:-}" != no-schema ]]; then
+    mkdir -p "$resources"
+    cp "$REPO_ROOT/tests/fixtures/warp-settings-schema.json" "$resources/settings_schema.json"
+  fi
 }
 
 # write_fake_ghostty_bin PATH VERSION — a ghostty whose validator mimics Ghostty's.

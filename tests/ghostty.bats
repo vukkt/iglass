@@ -20,12 +20,12 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   assert_success_
   assert_output_has "Installed iglass for Ghostty"
   run ls "$XDG/themes"
-  [[ $(wc -l <<<"$output") -eq 8 ]]
-  [[ -f "$XDG/iglass.ghostty" ]]
-  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]]
+  [[ $(wc -l <<<"$output") -eq 8 ]] || false
+  [[ -f "$XDG/iglass.ghostty" ]] || false
+  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]] || false
   run jq -r '.ghostty.createdConfig' "$(state_file)"
-  [[ "$output" == true ]]
-  [[ ! -e "$(profile_file)" ]] # iTerm2 untouched
+  [[ "$output" == true ]] || false
+  [[ ! -e "$(profile_file)" ]] || false # iTerm2 untouched
 }
 
 @test "uninstall removes everything, including a config it created" {
@@ -33,7 +33,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   run "$IGLASS" uninstall --terminal ghostty
   assert_success_
   run find "$SANDBOX/xdg" -mindepth 1
-  [[ -z "$output" ]]
+  [[ -z "$output" ]] || false
 }
 
 @test "an existing config is restored byte for byte, even without a final newline" {
@@ -41,7 +41,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   printf 'font-size = 14\n# my comment\nbackground = #000000' >"$XDG/config.ghostty"
   cp "$XDG/config.ghostty" "$BATS_TEST_TMPDIR/original"
   "$IGLASS" install --terminal ghostty
-  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]]
+  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]] || false
   grep -qx 'background = #000000' "$XDG/config.ghostty" # not glued to iglass's lines
   "$IGLASS" uninstall --terminal ghostty
   cmp "$XDG/config.ghostty" "$BATS_TEST_TMPDIR/original"
@@ -60,21 +60,21 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   printf 'font-size = 14\n' >"$XDG/config.ghostty"
   printf 'font-size = 15\n' >"$AS/config"
   "$IGLASS" install --terminal ghostty
-  [[ "$(include_count "$AS/config")" == 1 ]]
-  [[ "$(include_count "$XDG/config.ghostty")" == 0 ]]
+  [[ "$(include_count "$AS/config")" == 1 ]] || false
+  [[ "$(include_count "$XDG/config.ghostty")" == 0 ]] || false
 }
 
 @test "a new config uses the old file name for Ghostty before 1.2.3" {
   fake_ghostty 1.2.0
   "$IGLASS" install --terminal ghostty
-  [[ "$(include_count "$XDG/config")" == 1 ]]
+  [[ "$(include_count "$XDG/config")" == 1 ]] || false
 }
 
 @test "reinstalling never duplicates the include" {
   "$IGLASS" install --terminal ghostty
   "$IGLASS" install --terminal ghostty --accent green
   "$IGLASS" install --terminal ghostty --variant clear
-  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]]
+  [[ "$(include_count "$XDG/config.ghostty")" == 1 ]] || false
 }
 
 @test "a symlinked config (dotfiles) stays a symlink; its target is edited" {
@@ -82,10 +82,10 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   printf 'font-size = 14\n' >"$SANDBOX/dotfiles/ghostty.conf"
   ln -s "$SANDBOX/dotfiles/ghostty.conf" "$XDG/config.ghostty"
   "$IGLASS" install --terminal ghostty
-  [[ -L "$XDG/config.ghostty" ]]
-  [[ "$(include_count "$SANDBOX/dotfiles/ghostty.conf")" == 1 ]]
+  [[ -L "$XDG/config.ghostty" ]] || false
+  [[ "$(include_count "$SANDBOX/dotfiles/ghostty.conf")" == 1 ]] || false
   "$IGLASS" uninstall --terminal ghostty
-  [[ -L "$XDG/config.ghostty" ]]
+  [[ -L "$XDG/config.ghostty" ]] || false
   cmp "$SANDBOX/dotfiles/ghostty.conf" <(printf 'font-size = 14\n')
 }
 
@@ -97,8 +97,8 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   assert_success_
   assert_output_has "Add these two lines"
   assert_output_has "$(include_line)"
-  [[ "$(include_count "$XDG/config.ghostty")" == 0 ]]
-  [[ -f "$XDG/themes/iglass-frosted-dark" ]]
+  [[ "$(include_count "$XDG/config.ghostty")" == 0 ]] || false
+  [[ -f "$XDG/themes/iglass-frosted-dark" ]] || false
   chmod 644 "$XDG/config.ghostty"
 }
 
@@ -119,7 +119,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   assert_success_
   assert_output_has "(blur, "
   run grep -rq "macos-glass" "$XDG/themes"
-  [[ "$status" -eq 1 ]]
+  [[ "$status" -eq 1 ]] || false
 }
 
 @test "--glass forces either mode" {
@@ -147,7 +147,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   "$IGLASS" install --terminal ghostty --blur 10
   grep -qx 'background-blur = 10' "$XDG/themes/iglass-custom-dark" # explicit radius wins
   "$IGLASS" install --terminal ghostty
-  [[ ! -e "$XDG/themes/iglass-custom-dark" ]]
+  [[ ! -e "$XDG/themes/iglass-custom-dark" ]] || false
 }
 
 @test "cursor, window and font options map to Ghostty settings" {
@@ -158,13 +158,13 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   grep -qx 'font-size = 14' "$XDG/iglass.ghostty"
   "$IGLASS" install --terminal ghostty --cursor keep
   run grep -q '^cursor-style' "$XDG/iglass.ghostty"
-  [[ "$status" -eq 1 ]]
+  [[ "$status" -eq 1 ]] || false
 }
 
 @test "--appearance pins Ghostty to one theme; preview follows it" {
   "$IGLASS" install --terminal ghostty --appearance dark --variant tinted
   grep -qx 'theme = iglass-tinted-dark' "$XDG/iglass.ghostty"
-  [[ -f "$XDG/themes/iglass-tinted-light" ]] # both still installed, for switching back
+  [[ -f "$XDG/themes/iglass-tinted-light" ]] || false # both still installed, for switching back
   run "$IGLASS" preview --terminal ghostty
   assert_logged "--theme=iglass-tinted-dark"
   run "$IGLASS" status
@@ -185,14 +185,14 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   run grep '^palette = 1=' "$XDG/themes/iglass-frosted-light"
   local r g b
   IFS=, read -r r g b <<<"$hex"
-  [[ "$output" == "$(printf 'palette = 1=#%02x%02x%02x' "$((10#$r))" "$((10#$g))" "$((10#$b))")" ]]
+  [[ "$output" == "$(printf 'palette = 1=#%02x%02x%02x' "$((10#$r))" "$((10#$g))" "$((10#$b))")" ]] || false
 }
 
 @test "every theme has 16 palette entries and well-formed colors" {
   "$IGLASS" install --terminal ghostty
   local f
   for f in "$XDG"/themes/*; do
-    [[ $(grep -c '^palette = ' "$f") -eq 16 ]]
+    [[ $(grep -c '^palette = ' "$f") -eq 16 ]] || false
     if grep -E '^(background|foreground|cursor-color|selection-background) = ' "$f" |
       grep -vqE ' = #[0-9a-f]{6}$'; then
       echo "malformed color in $f" >&2
@@ -206,7 +206,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   printf 'background = #000000\n' >"$XDG/themes/iglass-mine"
   "$IGLASS" install --terminal ghostty
   "$IGLASS" uninstall --terminal ghostty
-  [[ -f "$XDG/themes/iglass-mine" ]]
+  [[ -f "$XDG/themes/iglass-mine" ]] || false
 }
 
 @test "nothing changes when Ghostty rejects the generated files" {
@@ -215,7 +215,7 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   MOCK_GHOSTTY_REJECT=1 run "$IGLASS" install --terminal ghostty
   assert_failure_
   assert_output_has "Nothing was changed"
-  [[ ! -e "$XDG/themes" && ! -e "$XDG/iglass.ghostty" ]]
+  [[ ! -e "$XDG/themes" && ! -e "$XDG/iglass.ghostty" ]] || false
   cmp "$XDG/config.ghostty" <(printf 'font-size = 14\n')
 }
 
@@ -229,16 +229,16 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
 @test "running inside Ghostty installs for Ghostty by default" {
   TERM_PROGRAM=ghostty run "$IGLASS" install
   assert_success_
-  [[ -f "$XDG/iglass.ghostty" && ! -e "$(profile_file)" ]]
+  [[ -f "$XDG/iglass.ghostty" && ! -e "$(profile_file)" ]] || false
 }
 
 @test "--terminal all installs both; plain uninstall removes both" {
   run "$IGLASS" install --terminal all
   assert_success_
-  [[ -f "$XDG/iglass.ghostty" && -f "$(profile_file)" ]]
+  [[ -f "$XDG/iglass.ghostty" && -f "$(profile_file)" ]] || false
   run "$IGLASS" uninstall
   assert_success_
-  [[ ! -e "$XDG/iglass.ghostty" && ! -e "$(profile_file)" ]]
+  [[ ! -e "$XDG/iglass.ghostty" && ! -e "$(profile_file)" ]] || false
 }
 
 @test "--app-settings is refused for Ghostty alone" {
@@ -250,8 +250,8 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
 @test "export writes Ghostty files to a folder, and needs one" {
   run "$IGLASS" export --terminal ghostty --dir "$SANDBOX/out"
   assert_success_
-  [[ -f "$SANDBOX/out/iglass.ghostty" && -f "$SANDBOX/out/themes/iglass-tinted-dark" ]]
-  [[ ! -e "$XDG" ]]
+  [[ -f "$SANDBOX/out/iglass.ghostty" && -f "$SANDBOX/out/themes/iglass-tinted-dark" ]] || false
+  [[ ! -e "$XDG" ]] || false
   run "$IGLASS" export --terminal ghostty
   assert_failure_
   assert_output_has "--dir"

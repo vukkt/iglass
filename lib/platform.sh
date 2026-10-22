@@ -109,6 +109,7 @@ desktop_description() {
 # Blur on Linux comes from the desktop. KDE Plasma (KWin) blurs when the terminal asks, and
 # Hyprland blurs translucent windows itself. niri 26.04+ and GNOME 51+ blur when the app asks
 # through the ext-background-effect protocol, which kitty does from 0.46.2 and Ghostty from 1.4.
+# Warp doesn't ask on Linux, so only Hyprland (and niri, with a window rule) blur behind it.
 # Elsewhere the background shows through sharply, and only Tinted and Solid stay readable.
 IGLASS_MIN_NIRI_BLUR=26.04
 IGLASS_MIN_GNOME_BLUR=51
@@ -127,7 +128,11 @@ desktop_blur_gap() {
   id=$(desktop_id)
   name=$(desktop_name)
   case "$id" in
-    kde | hyprland) return 0 ;;
+    hyprland) return 0 ;;
+    kde)
+      [[ "$1" == warp ]] && printf "KDE Plasma blurs behind apps that ask for it, which Warp doesn't on Linux\n"
+      return 0
+      ;;
     niri) min=$IGLASS_MIN_NIRI_BLUR ;;
     gnome) min=$IGLASS_MIN_GNOME_BLUR ;;
     *)
@@ -144,6 +149,10 @@ desktop_blur_gap() {
   case "$1" in
     kitty) app=kitty app_v=$(kitty_version) app_min=$IGLASS_MIN_KITTY_BLUR_REQUEST ;;
     ghostty) app=Ghostty app_v=$(ghostty_version) app_min=$IGLASS_MIN_GHOSTTY_BLUR_REQUEST ;;
+    warp)
+      printf "%s blurs behind apps that ask for it, which Warp doesn't on Linux\n" "$name"
+      return 0
+      ;;
     *) return 0 ;;
   esac
   if [[ -z "$app_v" ]]; then
@@ -155,16 +164,17 @@ desktop_blur_gap() {
 }
 
 # desktop_blur_tip TERMINAL — how to get blur anyway where the desktop can add it itself (niri
-# window rules), for a terminal that doesn't ask yet. Nothing elsewhere.
+# window rules), for a terminal that doesn't ask (yet). Nothing elsewhere.
 desktop_blur_tip() {
   [[ "$(desktop_id)" == niri ]] && version_ge "$(desktop_version)" "$IGLASS_MIN_NIRI_BLUR" || return 0
-  local app_id
+  local app_id lead="Until then, niri can blur it"
   case "$1" in
     kitty) app_id='^kitty$' ;;
     ghostty) app_id='^com\.mitchellh\.ghostty$' ;;
+    warp) app_id=$WARP_APP_ID lead="niri can still blur it" ;;
     *) return 0 ;;
   esac
-  printf '%s\n' "  Until then, niri can blur it with a window rule in ~/.config/niri/config.kdl:" \
+  printf '%s\n' "  $lead with a window rule in ~/.config/niri/config.kdl:" \
     "    window-rule {" \
     "        match app-id=\"$app_id\"" \
     "        background-effect {" \
@@ -215,9 +225,19 @@ install_hint() { # PACKAGE
   fi
 }
 
-# Where to get Ghostty or kitty on this system, for messages. Ghostty is packaged only in Arch's
+# A terminal's name for messages: iTerm2, Ghostty, kitty or Warp.
+terminal_name() { # iterm2|ghostty|kitty|warp
+  case "$1" in
+    iterm2) printf 'iTerm2\n' ;;
+    ghostty) printf 'Ghostty\n' ;;
+    warp) printf 'Warp\n' ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+# Where to get Ghostty, kitty or Warp on this system, for messages. Ghostty is packaged only in Arch's
 # repositories; kitty is in all of them (its own installer has the newest version).
-terminal_get_hint() { # ghostty|kitty
+terminal_get_hint() { # ghostty|kitty|warp
   local cmd=""
   case "$1" in
     ghostty)
@@ -228,5 +248,6 @@ terminal_get_hint() { # ghostty|kitty
       is_linux && cmd=$(package_command kitty)
       printf '%s\n' "Get kitty${cmd:+ with: $cmd, or} from https://sw.kovidgoyal.net/kitty/binary/"
       ;;
+    warp) printf '%s\n' "Get Warp from https://www.warp.dev/download" ;;
   esac
 }

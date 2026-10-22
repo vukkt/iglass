@@ -3,6 +3,35 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-10-22
+
+### Added
+- **Warp support**, on macOS and Linux, requested by a Product Hunt commenter: iglass's colors as
+  two Warp themes (iglass Dark and iglass Light) that Warp switches with light and dark mode,
+  and the glass through Warp's window opacity and blur (Clear 50%, Frosted 66%, Tinted 82%,
+  Solid opaque; blur on macOS). Accents, `--contrast`, `--appearance`, `--cursor`, `--font`,
+  `--opacity` and `--blur` all apply. Warp picks the change up immediately, without a restart.
+- iglass edits Warp's `settings.toml` line by line and leaves every other line, comment and
+  setting as it was. Uninstall restores the values you had, keeps anything you changed in Warp
+  since, and restores the file byte for byte when nothing else changed. Settings written in a
+  form iglass doesn't edit (dotted keys, inline tables) stop the install instead of being
+  duplicated.
+- Before writing, iglass checks every setting against the settings schema that ships inside
+  the installed Warp, and `doctor` reports a Warp too old to read `settings.toml`, settings
+  changed on Warp's settings page, and whether the Linux desktop blurs behind Warp (Hyprland
+  does; niri can with the window rule iglass prints; KDE Plasma and GNOME don't).
+- `--terminal warp`, and Warp in `--terminal all`, `doctor`, `status`, `uninstall` and
+  `export --dir`. iglass recognizes it runs inside Warp (`TERM_PROGRAM=WarpTerminal`).
+- Prebuilt Warp files in `themes/warp/`.
+- CI downloads Warp's latest Linux release and validates what iglass writes, on Linux and
+  macOS, against that release's settings schema, then checks the byte-for-byte uninstall.
+
+### Fixed
+- The "blur above 26 can make iTerm2 slow" warning appeared when installing only for other
+  terminals; it now shows only when iTerm2 is among them.
+- Test suites: checks written as `[[ … ]]` in the middle of a test didn't fail the test under
+  macOS's bash 3.2, so some assertions only ran on Linux CI. They now fail everywhere.
+
 ## [1.5.0] - 2026-10-19
 
 ### Added
@@ -122,6 +151,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.6.0]: https://github.com/vukkt/iglass/releases/tag/v1.6.0
 [1.5.0]: https://github.com/vukkt/iglass/releases/tag/v1.5.0
 [1.4.0]: https://github.com/vukkt/iglass/releases/tag/v1.4.0
 [1.3.0]: https://github.com/vukkt/iglass/releases/tag/v1.3.0

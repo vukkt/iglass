@@ -17,7 +17,7 @@ teardown() {
   local version
   version=$("$IGLASS" --version)
   run jq -r '.options.accent + " " + .options.variant + " " + .version' "$(state_file)"
-  [[ "$output" == "orange frosted ${version#iglass }" ]]
+  [[ "$output" == "orange frosted ${version#iglass }" ]] || false
 }
 
 @test "install is idempotent: reinstalling gives a byte-identical file" {
@@ -30,9 +30,9 @@ teardown() {
 @test "install leaves no temporary files behind" {
   "$IGLASS" install
   run ls -A "$IGLASS_DYNPROFILES_DIR"
-  [[ "$output" == iglass.json ]]
+  [[ "$output" == iglass.json ]] || false
   run find "$IGLASS_STATE_DIR" -name '.*'
-  [[ -z "$output" ]]
+  [[ -z "$output" ]] || false
 }
 
 @test "install never touches other files in the profiles folder" {
@@ -48,7 +48,7 @@ teardown() {
   rm -rf "$IGLASS_DYNPROFILES_DIR"
   run "$IGLASS" install
   assert_success_
-  [[ -f "$(profile_file)" ]]
+  [[ -f "$(profile_file)" ]] || false
 }
 
 @test "install fails cleanly when the profiles folder is read-only" {
@@ -56,7 +56,7 @@ teardown() {
   run "$IGLASS" install
   assert_failure_
   assert_output_has "No permission"
-  [[ ! -e "$(profile_file)" ]]
+  [[ ! -e "$(profile_file)" ]] || false
 }
 
 @test "install keeps the previous file if writing fails" {
@@ -82,14 +82,14 @@ teardown() {
 
 @test "install suggests settings that match macOS accessibility options" {
   run "$IGLASS" install
-  [[ "$output" != *"Reduce transparency"* && "$output" != *"Increase contrast"* ]]
+  [[ "$output" != *"Reduce transparency"* && "$output" != *"Increase contrast"* ]] || false
   defaults write "$IGLASS_A11Y_DOMAIN" reduceTransparency -bool true
   defaults write "$IGLASS_A11Y_DOMAIN" increaseContrast -bool true
   run "$IGLASS" install
   assert_output_has "--variant solid"
   assert_output_has "--contrast high"
   run "$IGLASS" install --variant solid --contrast high
-  [[ "$output" != *"Reduce transparency"* && "$output" != *"Increase contrast"* ]]
+  [[ "$output" != *"Reduce transparency"* && "$output" != *"Increase contrast"* ]] || false
 }
 
 @test "status reflects what is installed" {
@@ -108,7 +108,7 @@ teardown() {
   "$IGLASS" install --variant tinted --accent graphite
   run "$IGLASS" list
   assert_success_
-  [[ "$output" == *"tinted"*"(selected)"* ]]
+  [[ "$output" == *"tinted"*"(selected)"* ]] || false
   assert_output_has "graphite (installed)"
 }
 
@@ -116,7 +116,7 @@ teardown() {
   "$IGLASS" install
   run "$IGLASS" uninstall
   assert_success_
-  [[ ! -e "$(profile_file)" ]]
+  [[ ! -e "$(profile_file)" ]] || false
   run "$IGLASS" uninstall
   assert_success_
   assert_output_has "were not installed"
@@ -128,7 +128,7 @@ teardown() {
   run "$IGLASS" uninstall
   assert_success_
   assert_output_has "isn't an iglass file"
-  [[ -f "$(profile_file)" ]]
+  [[ -f "$(profile_file)" ]] || false
 }
 
 @test "preview needs an installation" {

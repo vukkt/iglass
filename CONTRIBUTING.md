@@ -17,10 +17,15 @@ folders, a scratch preferences file and stand-ins for iTerm2, so they never touc
 
 Every test runs with a sandboxed `HOME`, so nothing can reach your real configuration.
 `tests/kitty.bats` runs on both systems and, when kitty is installed, checks the generated files
-with kitty's own parser. `tests/linux.bats` covers Linux and runs on both systems: it sets `IGLASS_PLATFORM=linux`,
+with kitty's own parser. `tests/warp.bats` also runs on both, against a stand-in Warp that ships
+the relevant part of Warp's real settings schema (`tests/fixtures`). `tests/linux.bats` covers Linux and runs on both systems: it sets `IGLASS_PLATFORM=linux`,
 which switches iglass to its Linux code paths. The suites tagged `macos` need macOS tools
 (`plutil`, `defaults`), so `make test` skips them on Linux. CI runs both, and on Ubuntu also
-checks iglass end to end against the real Ghostty.
+checks iglass end to end against the real Ghostty, kitty and Warp's settings schema
+(`tools/check_warp.py`, which needs the `jsonschema` and `PyYAML` packages).
+
+A check written as `[[ … ]]` in the middle of a test must end in `|| false`: macOS's bash 3.2
+doesn't stop a test when it fails otherwise.
 
 ## Changing colors
 

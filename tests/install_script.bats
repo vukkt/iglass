@@ -11,10 +11,10 @@ setup() {
 @test "installs the command and it runs through the symlink" {
   run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
   assert_success_
-  [[ -L "$PREFIX/bin/iglass" ]]
+  [[ -L "$PREFIX/bin/iglass" ]] || false
   run "$PREFIX/bin/iglass" --version
   assert_success_
-  [[ "$output" == "$("$IGLASS" --version)" ]]
+  [[ "$output" == "$("$IGLASS" --version)" ]] || false
   run "$PREFIX/bin/iglass" export
   assert_success_
 }
@@ -23,7 +23,7 @@ setup() {
   "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
   # A fixed collation: some locales sort LICENSE after bin.
   run env LC_ALL=C ls "$PREFIX/share/iglass"
-  [[ "$output" == $'LICENSE\nbin\ndata\nlib' ]]
+  [[ "$output" == $'LICENSE\nbin\ndata\nlib' ]] || false
 }
 
 @test "reinstalling replaces the previous copy cleanly" {
@@ -31,16 +31,16 @@ setup() {
   touch "$PREFIX/share/iglass/stale-file"
   run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
   assert_success_
-  [[ ! -e "$PREFIX/share/iglass/stale-file" ]]
+  [[ ! -e "$PREFIX/share/iglass/stale-file" ]] || false
   run find "$PREFIX/share" -maxdepth 1 -name '.iglass.*'
-  [[ -z "$output" ]]
+  [[ -z "$output" ]] || false
 }
 
 @test "--uninstall removes the command and its files" {
   "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
   run "$REPO_ROOT/install.sh" --uninstall --prefix "$PREFIX"
   assert_success_
-  [[ ! -e "$PREFIX/bin/iglass" && ! -e "$PREFIX/share/iglass" ]]
+  [[ ! -e "$PREFIX/bin/iglass" && ! -e "$PREFIX/share/iglass" ]] || false
 }
 
 @test "refuses an incomplete package and leaves the old install alone" {
@@ -51,7 +51,7 @@ setup() {
   run "$broken/install.sh" --local --prefix "$PREFIX"
   assert_failure_
   assert_output_has "data/palette.json is missing"
-  [[ -f "$PREFIX/share/iglass/data/palette.json" ]]
+  [[ -f "$PREFIX/share/iglass/data/palette.json" ]] || false
 }
 
 @test "tells the user how to add the bin folder to PATH" {
@@ -117,7 +117,7 @@ CURL
   run "$REPO_ROOT/install.sh" --version 9.9.9 --prefix "$PREFIX"
   assert_failure_
   assert_output_has "download failed"
-  [[ ! -e "$PREFIX/bin/iglass" ]]
+  [[ ! -e "$PREFIX/bin/iglass" ]] || false
 }
 
 @test "no shell file puts a non-ASCII character right after a variable" {

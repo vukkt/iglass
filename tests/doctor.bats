@@ -19,7 +19,7 @@ setup() { setup_sandbox; }
   before=$(find "$SANDBOX" -type f -not -name calls.log -exec shasum {} + | sort)
   "$IGLASS" doctor
   after=$(find "$SANDBOX" -type f -not -name calls.log -exec shasum {} + | sort)
-  [[ "$before" == "$after" ]]
+  [[ "$before" == "$after" ]] || false
 }
 
 @test "finds another broken file that would block every dynamic profile" {
