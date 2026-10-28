@@ -89,9 +89,11 @@ desktop_name() {
   esac
 }
 
-# The desktop's version where blur depends on it (niri, GNOME), e.g. 26.04 or 51.1.
+# The desktop's version where blur depends on it (KDE Plasma, niri, GNOME), e.g. 6.7.5, 26.04
+# or 51.1.
 desktop_version() {
   case "$(desktop_id)" in
+    kde) plasmashell --version 2>/dev/null | sed -n '1s/^plasmashell \([0-9][0-9.]*\).*/\1/p' ;;
     niri) niri --version 2>/dev/null | sed -n '1s/^niri \([0-9][0-9.]*\).*/\1/p' ;;
     gnome) gnome-shell --version 2>/dev/null | sed -n '1s/^GNOME Shell \([0-9][0-9.]*\).*/\1/p' ;;
   esac
@@ -106,13 +108,17 @@ desktop_description() {
   printf '%s\n' "$name${v:+ $v}"
 }
 
-# Blur on Linux comes from the desktop. KDE Plasma (KWin) blurs when the terminal asks, and
-# Hyprland blurs translucent windows itself. niri 26.04+ and GNOME 51+ blur when the app asks
-# through the ext-background-effect protocol, which kitty does from 0.46.2 and Ghostty from 1.4.
-# Warp doesn't ask on Linux, so only Hyprland (and niri, with a window rule) blur behind it.
+# Blur on Linux comes from the desktop, for apps that ask for it. niri 26.04+, GNOME 51+ and KDE
+# Plasma 6.7+ blur through the ext-background-effect protocol, which kitty uses from 0.46.2 and
+# Ghostty from 1.4. Plasma before 6.7 only knows KDE's own blur protocol, which kitty also
+# speaks but Ghostty 1.4 dropped. Hyprland blurs translucent windows itself, except GTK 4.24+
+# windows that don't ask (GTK sets an empty blur region), such as Ghostty before 1.4. Warp
+# doesn't ask on Linux, so only Hyprland (and niri, with a window rule) blur behind it.
 # Elsewhere the background shows through sharply, and only Tinted and Solid stay readable.
 IGLASS_MIN_NIRI_BLUR=26.04
 IGLASS_MIN_GNOME_BLUR=51
+IGLASS_MIN_PLASMA_EXT_BLUR=6.7
+IGLASS_MIN_GTK_BLUR_REGION=4.24
 IGLASS_MIN_KITTY_BLUR_REQUEST=0.46.2
 IGLASS_MIN_GHOSTTY_BLUR_REQUEST=1.4
 
@@ -124,14 +130,39 @@ desktop_blurs() {
 # desktop_blur_gap TERMINAL — why the desktop doesn't blur behind this terminal, as a sentence
 # without a full stop; nothing when it does.
 desktop_blur_gap() {
-  local id name v min app="" app_v="" app_min=""
+  local id name v min app="" app_v="" app_min="" gtk_v
   id=$(desktop_id)
   name=$(desktop_name)
   case "$id" in
-    hyprland) return 0 ;;
-    kde)
-      [[ "$1" == warp ]] && printf "KDE Plasma blurs behind apps that ask for it, which Warp doesn't on Linux\n"
+    hyprland)
+      if [[ "$1" == ghostty ]]; then
+        app_v=$(ghostty_version)
+        gtk_v=$(ghostty_gtk_version)
+        if [[ -n "$app_v" && -n "$gtk_v" ]] && ! version_ge "$app_v" "$IGLASS_MIN_GHOSTTY_BLUR_REQUEST" &&
+          version_ge "$gtk_v" "$IGLASS_MIN_GTK_BLUR_REGION"; then
+          printf "Hyprland blurs GTK %s+ apps only when they ask, which Ghostty does from %s (this is Ghostty %s with GTK %s)\n" \
+            "$IGLASS_MIN_GTK_BLUR_REGION" "$IGLASS_MIN_GHOSTTY_BLUR_REQUEST" "$app_v" "$gtk_v"
+        fi
+      fi
       return 0
+      ;;
+    kde)
+      if [[ "$1" == warp ]]; then
+        printf "KDE Plasma blurs behind apps that ask for it, which Warp doesn't on Linux\n"
+        return 0
+      fi
+      v=$(desktop_version)
+      [[ -n "$v" ]] || return 0 # Plasma's version unknown: it blurs behind both
+      if ! version_ge "$v" "$IGLASS_MIN_PLASMA_EXT_BLUR"; then
+        # KDE's own blur protocol: kitty uses it, Ghostty did until 1.4.
+        [[ "$1" == ghostty ]] && app_v=$(ghostty_version)
+        if [[ -n "$app_v" ]] && version_ge "$app_v" "$IGLASS_MIN_GHOSTTY_BLUR_REQUEST"; then
+          printf "KDE Plasma %s blurs only apps that ask the older KDE way, which Ghostty %s no longer does (Plasma %s+ blurs it)\n" \
+            "$v" "$app_v" "$IGLASS_MIN_PLASMA_EXT_BLUR"
+        fi
+        return 0
+      fi
+      min=$IGLASS_MIN_PLASMA_EXT_BLUR name="KDE Plasma $v"
       ;;
     niri) min=$IGLASS_MIN_NIRI_BLUR ;;
     gnome) min=$IGLASS_MIN_GNOME_BLUR ;;
@@ -141,7 +172,7 @@ desktop_blur_gap() {
       return 0
       ;;
   esac
-  v=$(desktop_version)
+  v=${v:-$(desktop_version)}
   if [[ -z "$v" ]] || ! version_ge "$v" "$min"; then
     printf "%s doesn't blur behind windows (%s %s+ does)\n" "$name${v:+ $v}" "$name" "$min"
     return 0

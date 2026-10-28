@@ -56,6 +56,16 @@ ghostty_version() {
   plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist" 2>/dev/null || true
 }
 
+# Print the GTK version Ghostty runs with on Linux (e.g. 4.24.1), from the "GTK version" block
+# of ghostty --version; nothing elsewhere.
+ghostty_gtk_version() {
+  local bin
+  is_linux || return 0
+  bin=$(ghostty_bin)
+  [[ -n "$bin" ]] || return 0
+  "$bin" --version 2>/dev/null | awk '/GTK version/ { gtk = 1; next } gtk && /runtime/ { sub(/.*: */, ""); print; exit }'
+}
+
 # Print the path of the ghostty executable, or nothing if Ghostty is not installed.
 ghostty_bin() {
   local app

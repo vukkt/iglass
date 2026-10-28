@@ -219,12 +219,25 @@ on Linux.
   `ext-background-effect-v1` Wayland protocol: niri from 26.04 (its release notes), GNOME from
   mutter 51.0 ("Add ext-background-effect-v1 blur support", !5071, in mutter's NEWS). Neither
   blurs apps that don't ask. kitty asks from 0.46.2 (`background_blur`, per niri's notes; kitty
-  0.46.0 added the protocol). Ghostty asks from 1.4 (per niri's notes), which isn't out yet;
-  Ghostty 1.3 uses KDE's own blur protocol only. niri can add blur itself with a window rule
+  0.46.0 added the protocol). Ghostty asks from 1.4 (released 2026-10-27); Ghostty 1.3 uses
+  KDE's own blur protocol only. niri can add blur itself with a window rule
   (`background-effect { blur true }`), shaped by `geometry-corner-radius`. Its default "xray"
   blur shows the wallpaper rather than the windows behind.
+- **KDE Plasma 6.7 and Ghostty 1.4 changed protocols** (checked 2026-10-28). Plasma 6.7
+  (2026-06-16) supports `ext-background-effect-v1` and no longer offers KDE's
+  `org_kde_kwin_blur` (Ghostty discussion #13041, acknowledged by Ghostty's maintainers).
+  Ghostty 1.4 asks only through `ext-background-effect-v1` (its release notes and
+  `src/apprt/gtk/winproto/wayland.zig`), so it blurs on Plasma 6.7+ but not before, and
+  Ghostty 1.3 the other way round. kitty asks through `ext-background-effect-v1` when the
+  compositor offers it and falls back to KDE's protocol (`glfw/wl_window.c`), so it blurs on
+  both, but needs 0.46.2+ on Plasma 6.7+.
+- **Hyprland and GTK 4.24** (omarchy issue #15924, October 2026). GTK 4.24 sets a blur region
+  through `ext-background-effect-v1` on every window, empty unless the app asks, and Hyprland
+  0.56 honors it, so Ghostty 1.3 (GTK) is no longer blurred there; Ghostty 1.4 asks. kitty and
+  Warp aren't GTK apps and are blurred as before. `ghostty --version` lists the GTK runtime
+  version under "GTK version".
 - **Versions:** `niri --version` prints `niri 26.04 (commit)`, `gnome-shell --version` prints
-  `GNOME Shell 51.1`. `XDG_CURRENT_DESKTOP` is `niri` under niri and ends in `GNOME` under GNOME
+  `GNOME Shell 51.1`, `plasmashell --version` prints `plasmashell 6.7.5`. `XDG_CURRENT_DESKTOP` is `niri` under niri and ends in `GNOME` under GNOME
   (`ubuntu:GNOME` on Ubuntu).
 - **Distributions** are recognized from `ID` and `ID_LIKE` in `/etc/os-release`: Garuda, CachyOS,
   Manjaro and EndeavourOS all list `arch`. Ghostty is in Arch's own repositories; Debian, Ubuntu

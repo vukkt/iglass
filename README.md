@@ -126,13 +126,16 @@ material, so on Linux the glass is transparency plus blur, and blur depends on y
 
 | Desktop | Blur behind kitty | Blur behind Ghostty | Blur behind Warp | Light/dark switching |
 |---|---|---|---|---|
-| KDE Plasma | ✓ | ✓ | — | ✓ |
-| Hyprland | ✓ (Hyprland's own blur) | ✓ (Hyprland's own blur) | ✓ (Hyprland's own blur) | If the desktop reports it |
+| KDE Plasma 6.7+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+ | — | ✓ |
+| KDE Plasma before 6.7 | ✓ | Ghostty before 1.4 | — | ✓ |
+| Hyprland | ✓ (Hyprland's own blur) | ✓ (with GTK 4.24+: Ghostty 1.4+) | ✓ (Hyprland's own blur) | If the desktop reports it |
 | niri 26.04+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+, or now with a niri window rule | With a niri window rule | If the desktop reports it |
 | GNOME 51+ | ✓ (kitty 0.46.2+) | Ghostty 1.4+ | — | ✓ |
 | GNOME 50 and earlier, others | — | — | — | ✓ on GNOME; elsewhere if the desktop reports it |
 
-iglass recognizes the desktop and its version. Where it blurs, the default is **Frosted**. Clear
+Desktops and terminals moved to a new, shared way of asking for blur in 2026, which is why the
+versions matter: KDE Plasma 6.7 and Ghostty 1.4 both switched over. iglass recognizes the
+desktop, its version and the terminal's version. Where it blurs, the default is **Frosted**. Clear
 and Frosted rely on blur to keep text readable, so where it doesn't, iglass installs **Tinted**,
 which is checked against pure black and white, and tells you why. On niri it also prints the
 window rule that adds blur behind a terminal that doesn't ask for it yet. You can still choose
