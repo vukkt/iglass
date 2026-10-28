@@ -3,6 +3,19 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] - 2026-10-28
+
+### Fixed
+- **Blur on KDE Plasma and Hyprland after this year's protocol change.** KDE Plasma 6.7 replaced
+  KDE's own blur protocol with the shared `ext-background-effect-v1`, and Ghostty 1.4 (released
+  2026-10-27) now uses only the new one. iglass assumed KDE Plasma always blurs behind Ghostty
+  and kitty; it now reads the Plasma version (`plasmashell --version`) and knows that Plasma
+  6.7+ blurs Ghostty 1.4+ and kitty 0.46.2+, and earlier Plasma blurs kitty and Ghostty before
+  1.4. Where the combination doesn't blur, iglass picks Tinted and says why, as on other
+  desktops.
+- On Hyprland, GTK 4.24 stopped blur behind GTK apps that don't ask for it, which includes
+  Ghostty before 1.4. iglass reads Ghostty's GTK version and picks Tinted for that combination.
+
 ## [1.6.0] - 2026-10-22
 
 ### Added
@@ -151,6 +164,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.6.1]: https://github.com/vukkt/iglass/releases/tag/v1.6.1
 [1.6.0]: https://github.com/vukkt/iglass/releases/tag/v1.6.0
 [1.5.0]: https://github.com/vukkt/iglass/releases/tag/v1.5.0
 [1.4.0]: https://github.com/vukkt/iglass/releases/tag/v1.4.0

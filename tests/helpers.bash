@@ -19,6 +19,8 @@
 #   MOCK_GNOME_HIGH_CONTRAST=1   GNOME's high-contrast setting is on
 #   MOCK_NIRI=26.04              version reported by niri --version (unset: niri isn't there)
 #   MOCK_GNOME=51.1              version reported by gnome-shell --version (unset: not there)
+#   MOCK_PLASMA=6.7.5            version reported by plasmashell --version (unset: not there)
+#   MOCK_GTK=4.24.1              GTK runtime version in ghostty --version (unset: not listed)
 #
 # fake_ghostty, fake_kitty and fake_warp install stand-ins for those terminals.
 
@@ -51,7 +53,7 @@ setup_sandbox() {
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS IGLASS_GHOSTTY_BIN
   unset MOCK_FC_FONTS MOCK_GNOME_HIGH_CONTRAST XDG_STATE_HOME XDG_CURRENT_DESKTOP MOCK_KITTY_REJECT
-  unset MOCK_NIRI MOCK_GNOME XDG_DATA_HOME
+  unset MOCK_NIRI MOCK_GNOME MOCK_PLASMA MOCK_GTK XDG_DATA_HOME
   export IGLASS_KITTY_BIN="$SANDBOX/no-kitty" IGLASS_KITTY_APP="$SANDBOX/no-kitty.app" # fake_kitty installs one
   export IGLASS_WARP_APP="$SANDBOX/no-warp.app" IGLASS_WARP_BIN="$SANDBOX/no-warp" # fake_warp installs one
 
@@ -167,6 +169,11 @@ if [[ "$1" == --version ]]; then
   echo "Ghostty @VERSION@"
   echo
   echo "Version"
+  if [[ -n "${MOCK_GTK:-}" ]]; then
+    echo "  - GTK version   :"
+    echo "    build         : 4.20.0"
+    echo "    runtime       : $MOCK_GTK"
+  fi
   exit 0
 fi
 [[ "$1" == +validate-config ]] || exit 0
@@ -233,6 +240,12 @@ EOF
 #!/bin/bash
 [[ -n "${MOCK_GNOME:-}" ]] || exit 127
 echo "GNOME Shell $MOCK_GNOME"
+EOF
+
+  cat >"$MOCK_DIR/bin/plasmashell" <<'EOF'
+#!/bin/bash
+[[ -n "${MOCK_PLASMA:-}" ]] || exit 127
+echo "plasmashell $MOCK_PLASMA"
 EOF
 
   cat >"$MOCK_DIR/bin/sw_vers" <<'EOF'

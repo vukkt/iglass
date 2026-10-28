@@ -91,6 +91,56 @@ os_release() { # ID ID_LIKE NAME
   [[ "$output" != *"window-rule"* ]] || false # window rules are a niri feature
 }
 
+@test "KDE Plasma 6.7+ blurs through the new protocol: kitty 0.46.2+ and Ghostty 1.4+" {
+  export XDG_CURRENT_DESKTOP=KDE MOCK_PLASMA=6.8.0
+  fake_kitty 0.49.2
+  run "$IGLASS" install --terminal kitty
+  assert_output_has "Installed iglass for kitty (blur, "
+  run "$IGLASS" doctor
+  assert_output_has "Fedora Linux 43 · KDE Plasma 6.8.0"
+  assert_output_has "KDE Plasma 6.8.0 blurs behind kitty"
+  fake_kitty 0.45.0
+  run "$IGLASS" install --terminal kitty
+  assert_output_has "KDE Plasma 6.8.0 blurs behind apps that ask for it, which kitty does from 0.46.2 (this is kitty 0.45.0)"
+  use_linux 1.3.1
+  run "$IGLASS" install --terminal ghostty
+  assert_output_has "which Ghostty does from 1.4 (this is Ghostty 1.3.1), so iglass uses Tinted"
+  [[ "$output" != *"window-rule"* ]] || false # window rules are a niri feature
+  use_linux 1.4.0
+  run "$IGLASS" install --terminal ghostty
+  assert_output_has "Updated iglass for Ghostty (blur, "
+}
+
+@test "KDE Plasma before 6.7 blurs through KDE's own protocol, which Ghostty 1.4 dropped" {
+  export XDG_CURRENT_DESKTOP=KDE MOCK_PLASMA=6.3.6
+  use_linux 1.3.1
+  run "$IGLASS" install --terminal ghostty
+  assert_output_has "Installed iglass for Ghostty (blur, "
+  fake_kitty 0.40.0
+  run "$IGLASS" install --terminal kitty
+  assert_output_has "Installed iglass for kitty (blur, "
+  use_linux 1.4.0
+  run "$IGLASS" install --terminal ghostty
+  assert_output_has "KDE Plasma 6.3.6 blurs only apps that ask the older KDE way, which Ghostty 1.4.0 no longer does (Plasma 6.7+ blurs it)"
+  MOCK_PLASMA="" run "$IGLASS" install --terminal ghostty # version unknown: assume it blurs
+  assert_output_has "Updated iglass for Ghostty (blur, "
+}
+
+@test "Hyprland with GTK 4.24 blurs Ghostty only from 1.4; kitty and Warp as before" {
+  export XDG_CURRENT_DESKTOP=Hyprland MOCK_GTK=4.24.1
+  use_linux 1.3.1
+  run "$IGLASS" install --terminal ghostty
+  assert_output_has "Hyprland blurs GTK 4.24+ apps only when they ask, which Ghostty does from 1.4 (this is Ghostty 1.3.1 with GTK 4.24.1)"
+  MOCK_GTK=4.22.4 run "$IGLASS" install --terminal ghostty
+  assert_output_has "Updated iglass for Ghostty (blur, "
+  use_linux 1.4.0
+  run "$IGLASS" install --terminal ghostty
+  assert_output_has "Updated iglass for Ghostty (blur, "
+  fake_kitty 0.49.2
+  run "$IGLASS" install --terminal kitty
+  assert_output_has "Installed iglass for kitty (blur, "
+}
+
 @test "--terminal all picks Tinted when the desktop blurs behind only one of them" {
   use_linux 1.3.1
   fake_kitty 0.49.2
