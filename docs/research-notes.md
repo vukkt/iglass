@@ -140,7 +140,8 @@ renders correctly here at every iglass opacity, including 0.90 with a dark backg
 
 ## kitty
 
-Verified against kitty 0.49.2 and its source code (October 2026).
+Verified against kitty 0.49.2 and its source code (October 2026); the 0.50.0 changelog (November
+2026) changes none of it, and CI runs the end-to-end check against 0.50.0.
 
 - **Config location.** kitty reads one `kitty.conf`: from `$KITTY_CONFIG_DIRECTORY` when it's set,
   otherwise from the first of `$XDG_CONFIG_HOME/kitty`, `~/.config/kitty`,
