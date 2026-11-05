@@ -73,14 +73,14 @@ jobs:
           sudo snap install ghostty --classic
           ghostty --version
 
-      # kitty 0.49.2 from its official release, checked against a pinned checksum.
+      # kitty 0.50.0 from its official release, checked against a pinned checksum.
       - name: Install kitty
         id: kitty
         continue-on-error: true
         run: |
           curl -fsSL -o "$RUNNER_TEMP/kitty.txz" \
-            https://github.com/kovidgoyal/kitty/releases/download/v0.49.2/kitty-0.49.2-x86_64.txz
-          echo "d573618b911e9c461bd421b96c13c74c7f1cb2f1ac9c327818d4ff84366cf5c6  $RUNNER_TEMP/kitty.txz" | sha256sum -c -
+            https://github.com/kovidgoyal/kitty/releases/download/v0.50.0/kitty-0.50.0-x86_64.txz
+          echo "f04b11775574d6aabfb529b7e734cc0a7d7d12c7df9fb8ec1843e45420e514ee  $RUNNER_TEMP/kitty.txz" | sha256sum -c -
           sudo mkdir -p /opt/kitty && sudo tar -xJf "$RUNNER_TEMP/kitty.txz" -C /opt/kitty
           sudo ln -sf /opt/kitty/bin/kitty /usr/local/bin/kitty
           kitty --version
