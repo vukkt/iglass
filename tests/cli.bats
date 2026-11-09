@@ -69,6 +69,13 @@ setup() { setup_sandbox; }
   assert_output_has "no section for 0.0.1"
 }
 
+@test "release notes link to the release's own files, not relative paths" {
+  run "$REPO_ROOT/tools/release-notes.sh" 1.7.0
+  assert_success_
+  assert_output_has "](https://github.com/vukkt/iglass/blob/v1.7.0/docs/what-iglass-changes.md)"
+  [[ "$output" != *"](docs/"* ]] || false
+}
+
 @test "lib/ makes temporary files only through temp_make" {
   # temp_make removes them when iglass exits, even when it's interrupted (lib/temp.sh).
   run grep -n 'mktemp' "$REPO_ROOT"/lib/*.sh
