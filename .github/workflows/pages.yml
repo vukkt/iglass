@@ -28,7 +28,7 @@ jobs:
           mkdir -p _site/screenshots
           cp -R site/. _site/
           for f in ghostty-clear ghostty-frosted ghostty-tinted ghostty-solid linux-kde-frosted frosted \
-            kitty-frosted kitty-frosted-light; do
+            kitty-frosted kitty-frosted-light warp-frosted warp-frosted-light; do
             cp "docs/screenshots/$f.png" _site/screenshots/
           done
           cp docs/social-preview.png _site/og.png
