@@ -38,7 +38,7 @@ profile_write() {
     die "No permission to write to $IGLASS_DYNPROFILES_DIR."
   # The temporary file lives outside the profiles folder: iTerm2 would try to load a
   # half-written file there.
-  tmp=$(mktemp "$IGLASS_STATE_DIR/.iglass.json.XXXXXX") || die "Could not create a temporary file."
+  temp_make tmp "$IGLASS_STATE_DIR/.iglass.json.XXXXXX" || die "Could not create a temporary file."
   if ! profile_build "$1" >"$tmp" || ! profile_valid "$tmp"; then
     rm -f "$tmp"
     die "Internal error: the generated profile did not validate. Nothing was changed." \

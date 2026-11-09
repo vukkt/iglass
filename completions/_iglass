@@ -1,0 +1,83 @@
+#compdef iglass
+# zsh completion for iglass (https://github.com/vukkt/iglass).
+# Homebrew and install.sh install it; to use it from a checkout, add the completions folder to
+# fpath before compinit runs: fpath=(/path/to/iglass/completions $fpath)
+
+_iglass() {
+  local curcontext=$curcontext state state_descr line ret=1
+  typeset -A opt_args
+  local -a variants=(clear frosted tinted solid)
+  local -a common=(
+    '(- *)'{-h,--help}'[show help]'
+    '(-y --yes)'{-y,--yes}'[answer yes to questions]'
+  )
+  local -a look=(
+    '--variant[glass level]:variant:(clear frosted tinted solid)'
+    '--accent[accent color]:accent:(blue purple pink red orange yellow green graphite)'
+    '--contrast[contrast level]:level:(standard high)'
+    '--appearance[follow light/dark mode, or always one]:appearance:(auto dark light)'
+    '--cursor[cursor style]:style:(bar box underline keep)'
+    '--window[window style]:style:(native no-titlebar keep)'
+    '--font[font]:font:(keep sf-mono)'
+    '--opacity[your own opacity]:opacity (0.05 to 1): '
+    '--blur[your own blur radius]:blur radius (0 to 64): '
+    '--force[allow an opacity below the readable minimum]'
+    '--glass[Ghostty glass]:mode:(auto native blur)'
+  )
+
+  _arguments -C \
+    '(- *)'{-h,--help}'[show help]' \
+    '(- *)'{-v,--version}'[show the version]' \
+    '(-y --yes)'{-y,--yes}'[answer yes to questions]' \
+    '1: :->command' \
+    '*:: :->option' && ret=0
+
+  case $state in
+    command)
+      local -a commands=(
+        'install:install or update iglass'
+        'preview:open a window with an iglass variant'
+        'list:show variants and accent colors'
+        'status:show what is installed'
+        'doctor:check for problems (changes nothing)'
+        'export:print the iTerm2 profiles, or write Ghostty, kitty or Warp files'
+        'uninstall:remove iglass and undo its changes'
+        'help:show help'
+      )
+      _describe -t commands 'iglass command' commands && ret=0
+      ;;
+    option)
+      curcontext=${curcontext%:*:*}:iglass-$line[1]:
+      case $line[1] in
+        install)
+          _arguments $common $look \
+            '--terminal[terminal to set up]:terminal:(iterm2 ghostty kitty warp all)' \
+            '--app-settings[iTerm2: native title bar and roomier padding]' \
+            '--default[iTerm2: make the variant your default profile]' && ret=0
+          ;;
+        export)
+          _arguments $common $look \
+            '--terminal[terminal to export for]:terminal:(iterm2 ghostty kitty warp)' \
+            '--dir[folder to write the files to]:folder:_files -/' && ret=0
+          ;;
+        preview)
+          _arguments $common \
+            "--variant[glass level]:variant:($variants custom)" \
+            '--terminal[terminal to open]:terminal:(iterm2 ghostty kitty)' && ret=0
+          ;;
+        uninstall)
+          _arguments $common \
+            '--terminal[terminal to remove iglass from]:terminal:(iterm2 ghostty kitty warp all)' \
+            '(--keep-app-settings)--restore-app-settings[put back iTerm2'\''s app-wide settings without asking]' \
+            '(--restore-app-settings)--keep-app-settings[keep iTerm2'\''s app-wide settings as they are]' && ret=0
+          ;;
+        *)
+          _arguments $common && ret=0
+          ;;
+      esac
+      ;;
+  esac
+  return ret
+}
+
+_iglass "$@"

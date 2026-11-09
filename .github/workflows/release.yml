@@ -1,0 +1,94 @@
+name: Release
+
+# When a release is published, brings the Homebrew tap (github.com/vukkt/homebrew-tap) up to
+# date: fills in packaging/homebrew/iglass.rb with the release's url and sha256, checks the
+# formula with brew audit, install and test, then pushes it to the tap. It writes to the tap
+# with a deploy key that can write to that one repository; the key is a secret of the
+# homebrew-tap environment, which only release tags and main can use.
+#
+# To redo it for a release (e.g. after fixing the formula): Actions › Release › Run workflow.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release to put in the tap, e.g. v1.7.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  homebrew:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: macos-15
+    timeout-minutes: 20
+    environment: homebrew-tap
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      # The formula is edited in the tap's checkout; an update would stash it away.
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+          persist-credentials: false
+
+      - name: Check the tag is this version
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Not a release tag: $TAG"; exit 1; }
+          version=${TAG#v}
+          grep -qx "IGLASS_VERSION=\"$version\"" bin/iglass ||
+            { echo "::error::bin/iglass at $TAG is not version $version"; exit 1; }
+          echo "VERSION=$version" >>"$GITHUB_ENV"
+
+      - name: Fill in the formula
+        run: |
+          url="https://github.com/$GITHUB_REPOSITORY/archive/refs/tags/$TAG.tar.gz"
+          sha=$(curl -fsSL --retry 3 "$url" | shasum -a 256 | cut -d' ' -f1)
+          sed -e "s|^  url \".*\"$|  url \"$url\"|" -e "s|^  sha256 \".*\"$|  sha256 \"$sha\"|" \
+            packaging/homebrew/iglass.rb >"$RUNNER_TEMP/iglass.rb"
+          grep -qxF "  url \"$url\"" "$RUNNER_TEMP/iglass.rb"
+          grep -qxF "  sha256 \"$sha\"" "$RUNNER_TEMP/iglass.rb"
+          echo "iglass $VERSION: $url, sha256 $sha"
+
+      - name: Check it with brew audit, install and test
+        run: |
+          brew tap vukkt/tap
+          cp "$RUNNER_TEMP/iglass.rb" "$(brew --repository vukkt/tap)/Formula/iglass.rb"
+          brew trust --formula vukkt/tap/iglass
+          brew audit --strict --online vukkt/tap/iglass
+          brew install vukkt/tap/iglass
+          brew test vukkt/tap/iglass
+          [[ "$(iglass --version)" == "iglass $VERSION" ]]
+
+      - name: Push it to the tap
+        env:
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ -n "$TAP_DEPLOY_KEY" ]] || { echo "::error::The homebrew-tap environment has no TAP_DEPLOY_KEY secret."; exit 1; }
+          title=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json name --jq .name)
+          mkdir -p ~/.ssh
+          # GitHub's SSH host keys, from its API over HTTPS rather than trusted on first use.
+          curl -fsSL --retry 3 https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com " + .' >~/.ssh/known_hosts
+          (umask 077 && printf '%s\n' "$TAP_DEPLOY_KEY" >"$RUNNER_TEMP/tap-key")
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/tap-key -o IdentitiesOnly=yes"
+          git clone --depth 1 git@github.com:vukkt/homebrew-tap.git "$RUNNER_TEMP/tap"
+          cd "$RUNNER_TEMP/tap"
+          cp "$RUNNER_TEMP/iglass.rb" Formula/iglass.rb
+          if git diff --quiet; then
+            echo "The tap already has this formula."
+          else
+            git -c user.name="$GITHUB_ACTOR" -c user.email="$GITHUB_ACTOR_ID+$GITHUB_ACTOR@users.noreply.github.com" \
+              commit -qam "${title:-iglass $VERSION}"
+            git push -q origin HEAD
+            echo "Pushed iglass $VERSION to the tap: $(git rev-parse --short HEAD)"
+          fi
+          rm -f "$RUNNER_TEMP/tap-key"

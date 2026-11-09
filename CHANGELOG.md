@@ -3,6 +3,33 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-11-09
+
+### Added
+- **Tab completion for bash, zsh and fish**: commands, the options each one takes, and their
+  values (variants, accents, terminals, cursor and window styles, folders for `--dir`).
+  Homebrew installs it; so does the install script, which links it where bash-completion and
+  fish look on their own and prints the one line zsh needs in `~/.zshrc`.
+- `--help` lists `uninstall`'s `--restore-app-settings` and `--keep-app-settings`, and
+  `export`'s `--dir`.
+- Warp screenshots in the README, light and dark.
+
+### Changed
+- `--help` says what `--variant`, `--opacity` and `--blur` do in Ghostty, kitty and Warp, not
+  only in iTerm2, and that the default variant is Tinted on Linux desktops that don't blur.
+- The README's lists of what iglass changes in each terminal moved to their own page,
+  [What iglass changes](docs/what-iglass-changes.md).
+- Releases update the Homebrew tap on their own: the formula lives in this repository and a
+  workflow checks it with `brew audit`, `install` and `test` before publishing it.
+- Smaller screenshots and demo GIF, losslessly recompressed: the same pixels, faster to load.
+
+### Fixed
+- An interrupted `iglass install` or `uninstall` (Ctrl-C) could leave temporary files behind,
+  including one next to your Ghostty or kitty config. iglass now removes them on the way out.
+- The install script could leave a hidden `.iglass.*` folder in `~/.local/share` when
+  interrupted while copying.
+- `--help` had one misaligned line.
+
 ## [1.6.1] - 2026-10-28
 
 ### Fixed
@@ -164,6 +191,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.7.0]: https://github.com/vukkt/iglass/releases/tag/v1.7.0
 [1.6.1]: https://github.com/vukkt/iglass/releases/tag/v1.6.1
 [1.6.0]: https://github.com/vukkt/iglass/releases/tag/v1.6.0
 [1.5.0]: https://github.com/vukkt/iglass/releases/tag/v1.5.0

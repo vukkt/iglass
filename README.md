@@ -94,6 +94,15 @@ On macOS Warp blurs behind its windows. On Linux Warp has no blur setting, so th
 transparency, and blur where the desktop adds it (Hyprland, or niri with a window rule). Warp
 reads `settings.toml` from its April 2026 releases on; `iglass doctor` tells you if yours is older.
 
+| | Dark | Light |
+|---|---|---|
+| **Clear** | <img src="docs/screenshots/warp-clear.png" alt="iglass Clear in Warp, dark"> | <img src="docs/screenshots/warp-clear-light.png" alt="iglass Clear in Warp, light"> |
+| **Frosted** | <img src="docs/screenshots/warp-frosted.png" alt="iglass Frosted in Warp, dark"> | <img src="docs/screenshots/warp-frosted-light.png" alt="iglass Frosted in Warp, light"> |
+| **Tinted** | <img src="docs/screenshots/warp-tinted.png" alt="iglass Tinted in Warp, dark"> | <img src="docs/screenshots/warp-tinted-light.png" alt="iglass Tinted in Warp, light"> |
+| **Solid** | <img src="docs/screenshots/warp-solid.png" alt="iglass Solid in Warp, dark"> | <img src="docs/screenshots/warp-solid-light.png" alt="iglass Solid in Warp, light"> |
+
+<sub>Warp's November 2026 release on macOS.</sub>
+
 <details>
 <summary><b>iTerm2 gallery</b> (all four variants, light and dark)</summary>
 
@@ -193,6 +202,11 @@ cd iglass && ./install.sh --local
 iglass install
 ```
 
+Homebrew and the install script also set up tab completion for bash, zsh and fish. With the
+install script, zsh needs one line in `~/.zshrc`, which the installer prints. With Homebrew, see
+[Homebrew's shell completion guide](https://docs.brew.sh/Shell-Completion) if zsh doesn't pick
+it up.
+
 `iglass install` sets up the terminal you run it in. Use `--terminal iterm2`, `ghostty`, `kitty`,
 `warp` or `all` to choose. In iTerm2, open a window with `iglass preview` or pick **Profiles ›
 iglass Frosted**. In Ghostty and kitty, quit and reopen them (they read transparency only at
@@ -262,59 +276,19 @@ iglass export --accent green > my.json       # print the iTerm2 profiles file in
 
 Opacity below the readable minimum (0.66) asks for `--force`.
 
-### What iglass changes in Ghostty
+### What iglass changes
 
-- Theme files in `~/.config/ghostty/themes/iglass-*`, one per variant and appearance, with the
-  colors, opacity and glass.
-- `~/.config/ghostty/iglass.ghostty`: which theme to use, padding and cursor.
-- Two lines, after a blank line, at the end of your Ghostty config (the one Ghostty loads
-  last): a comment and an optional `config-file` include. Your config is backed up first,
-  symlinked dotfiles stay symlinks, and `iglass uninstall` restores the file exactly.
-- iglass's own record of what it changed, and the backup of your config, live in
-  `~/Library/Application Support/iglass` on macOS and `~/.local/state/iglass` on Linux.
+Only the files that decide how your terminal looks: iglass's own theme files, two lines at the
+end of your Ghostty or kitty config, a few settings in Warp's `settings.toml`, and an iTerm2
+dynamic profile. Your config is backed up first, symlinked dotfiles stay symlinks, and
+`iglass uninstall` restores your files byte for byte. The full list, terminal by terminal:
+**[What iglass changes](docs/what-iglass-changes.md)**.
 
-### What iglass changes in kitty
-
-In the folder kitty reads its configuration from (chosen exactly the way kitty chooses it,
-usually `~/.config/kitty`):
-
-- `iglass.conf`: opacity, blur, padding and cursor.
-- `dark-theme.auto.conf`, `light-theme.auto.conf` and `no-preference-theme.auto.conf`: the
-  colors kitty switches between with light and dark mode. If you already have your own (from
-  `kitten themes`), iglass sets them aside and puts them back on uninstall.
-- Two lines at the end of `kitty.conf`: a comment and `include iglass.conf`. Like Ghostty's,
-  backed up first and restored exactly by `iglass uninstall`.
-
-### What iglass changes in Warp
-
-- `iglass-dark.yaml` and `iglass-light.yaml` in Warp's themes folder (`~/.warp/themes` on macOS,
-  `~/.local/share/warp-terminal/themes` on Linux): the colors and accent.
-- A few settings in Warp's `settings.toml` (`~/.warp/settings.toml` on macOS,
-  `~/.config/warp-terminal/settings.toml` on Linux): the theme and following light and dark
-  mode (`[appearance.themes]`), window opacity and blur (`[appearance.window]`), the cursor
-  unless you pass `--cursor keep`, and the font with `--font`. Every other line, comment and
-  setting stays as it was.
-- `iglass uninstall` puts back the values you had, removes what iglass added, and leaves alone
-  anything you changed in Warp since. If nothing else changed, the file comes back byte for
-  byte. iglass checks every setting against the schema Warp ships before writing anything.
-- If you use Warp's Settings Sync, Warp syncs these settings to your other computers, like any
-  change you make on its settings page.
-
-### App-wide settings (iTerm2)
-
-Some of the native feel comes from iTerm2 settings that apply to every window, not just a
-profile: iTerm2's **Automatic** theme, which lets macOS draw the title bar and tabs the way it
-draws them for its own apps, and generous **padding**. Apple's Liquid Glass guidance asks apps
-to let the system draw bars rather than custom ones.
-`--app-settings` turns these on. Because iTerm2 saves its settings when it quits, iglass has
-to change them while iTerm2 is closed:
-
-1. iglass records the current values and backs up your iTerm2 preferences.
-2. A small helper quits iTerm2 (it asks first if programs are running), applies the change and
-   reopens it. If you cancel the quit, nothing is written.
-3. `iglass uninstall` restores the exact previous values and removes keys that didn't exist.
-
-Backups live in `~/Library/Application Support/iglass/backups`.
+`--app-settings` goes one step further in iTerm2: its **Automatic** theme, which lets macOS draw
+the title bar and tabs the way it draws them for its own apps, and roomier padding. Those apply
+to every iTerm2 window, and iTerm2 saves its settings when it quits, so a small helper quits
+iTerm2 (asking first if programs are running), applies them and reopens it. Uninstall puts the
+exact previous values back.
 
 ## How it works
 
@@ -429,6 +403,7 @@ make palettes          # rebuild colors after editing design/palettes.json
 make themes            # rebuild the prebuilt themes/ files
 make check             # shellcheck, generated-file check, palette tests, bats suite
 tools/screenshots.sh   # README screenshots over a generated backdrop (needs Screen Recording)
+tools/release-notes.sh X.Y.Z   # a release's notes, from CHANGELOG.md (see CONTRIBUTING.md)
 tools/record-gif.sh    # docs/demo.gif (needs ffmpeg)
 osascript -l JavaScript tools/social-card.js BACKDROP.png SHOT.png docs/social-preview.png
 ```

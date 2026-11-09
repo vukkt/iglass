@@ -6,8 +6,8 @@ Thanks for helping. Bug reports with `iglass doctor` output, your OS and termina
 ## Setup
 
 ```sh
-brew install shellcheck bats-core              # macOS
-sudo apt install jq shellcheck bats python3    # Linux (or your distro's equivalents)
+brew install shellcheck bats-core fish                   # macOS
+sudo apt install jq shellcheck bats python3 zsh fish     # Linux (or your distro's equivalents)
 make check
 ```
 
@@ -23,6 +23,9 @@ which switches iglass to its Linux code paths. The suites tagged `macos` need ma
 (`plutil`, `defaults`), so `make test` skips them on Linux. CI runs both, and on Ubuntu also
 checks iglass end to end against the real Ghostty, kitty and Warp's settings schema
 (`tools/check_warp.py`, which needs the `jsonschema` and `PyYAML` packages).
+
+`tests/completions.bats` presses Tab in bash, zsh (in a pseudo-terminal, `tests/complete.zsh`)
+and fish; the zsh and fish parts are skipped when those shells aren't installed.
 
 A check written as `[[ … ]]` in the middle of a test must end in `|| false`: macOS's bash 3.2
 doesn't stop a test when it fails otherwise.
@@ -49,16 +52,29 @@ change makes a target unreachable, the build stops and names the color.
   directly: `stat -f`, for example, means something unrelated on Linux and still succeeds.
 - Anything written into iTerm2's dynamic profiles folder is validated first and written
   atomically. One unreadable file there disables every dynamic profile.
+- Temporary files and folders come from `temp_make` ([`lib/temp.sh`](lib/temp.sh)), never
+  `mktemp` directly, so iglass removes them even when it's interrupted.
+- A new option goes into `--help` and the three files in [`completions/`](completions) too;
+  tests check that every option the parser accepts is in all of them.
 - User-visible messages say what happened and what to do next.
 
 ## Releasing
 
 `main` is protected: changes land through pull requests once CI passes on macOS and Linux.
 
-1. In a pull request: update `IGLASS_VERSION` in `bin/iglass`, `CHANGELOG.md`, and
-   `make themes`. Merge it when CI is green.
-2. Tag the merge commit `vX.Y.Z`, push the tag, publish the GitHub release.
-3. Update `url` and `sha256` in the tap's formula
-   (`curl -fsSL <tarball url> | shasum -a 256`), run `brew audit --strict --online iglass`,
-   and push it to the tap. Mirror the same change into `packaging/homebrew/iglass.rb` with the
-   next pull request.
+1. In a pull request: update `IGLASS_VERSION` in `bin/iglass`, add the version's section and
+   link to `CHANGELOG.md` (a test checks both), and run `make themes`. Merge it when CI is green.
+2. Tag the merge commit and publish the release, with notes taken from the changelog:
+
+   ```sh
+   git tag -a vX.Y.Z -m "iglass X.Y.Z: Short title" && git push origin vX.Y.Z
+   gh release create vX.Y.Z --verify-tag --title "iglass X.Y.Z: Short title" \
+     --notes-file <(tools/release-notes.sh X.Y.Z)
+   ```
+
+3. That's all: publishing the release starts the [Release workflow](.github/workflows/release.yml),
+   which fills in [`packaging/homebrew/iglass.rb`](packaging/homebrew/iglass.rb) with the
+   release's url and checksum, runs `brew audit`, `install` and `test` on it, and pushes it to
+   [vukkt/homebrew-tap](https://github.com/vukkt/homebrew-tap). Change the formula in this repo,
+   never in the tap. If the workflow fails, fix the cause and run it again from Actions ›
+   Release › Run workflow, with the tag.

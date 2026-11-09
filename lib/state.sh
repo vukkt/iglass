@@ -22,7 +22,7 @@ state_update() {
   shift
   mkdir -p "$IGLASS_STATE_DIR" || die "Could not create $IGLASS_STATE_DIR."
   current=$(state_read)
-  tmp=$(mktemp "$IGLASS_STATE_DIR/.state.json.XXXXXX") || die "Could not create a temporary file."
+  temp_make tmp "$IGLASS_STATE_DIR/.state.json.XXXXXX" || die "Could not create a temporary file."
   if ! printf '%s\n' "$current" | jq "$@" "$filter" >"$tmp"; then
     rm -f "$tmp"
     die "Internal error: could not update $IGLASS_STATE_FILE."

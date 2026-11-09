@@ -213,7 +213,7 @@ warp_install() {
   fi
 
   mkdir -p "$IGLASS_STATE_DIR"
-  work=$(mktemp -d "$IGLASS_STATE_DIR/.warp.XXXXXX") || die "Could not create a temporary folder."
+  temp_make work -d "$IGLASS_STATE_DIR/.warp.XXXXXX" || die "Could not create a temporary folder."
   for mode in dark light; do
     warp_theme "$opts" "$mode" >"$work/iglass-$mode.yaml"
   done
@@ -363,7 +363,7 @@ warp_uninstall() {
     elif [[ -f "$settings" ]]; then
       # Changed since (Warp or the user saved settings): restore only iglass's settings.
       mkdir -p "$IGLASS_STATE_DIR"
-      work=$(mktemp -d "$IGLASS_STATE_DIR/.warp.XXXXXX") || die "Could not create a temporary folder."
+      temp_make work -d "$IGLASS_STATE_DIR/.warp.XXXXXX" || die "Could not create a temporary folder."
       edits="$work/edits.tsv"
       : >"$edits"
       while IFS=$'\t' read -r t k; do

@@ -190,7 +190,7 @@ kitty_install() {
   dir=$(kitty_config_dir)
   target="$dir/kitty.conf"
   mkdir -p "$IGLASS_STATE_DIR"
-  work=$(mktemp -d "$IGLASS_STATE_DIR/.kitty.XXXXXX") || die "Could not create a temporary folder."
+  temp_make work -d "$IGLASS_STATE_DIR/.kitty.XXXXXX" || die "Could not create a temporary folder."
   kitty_export_dir "$opts" "$work"
   files=("$work/iglass.conf")
   for f in $KITTY_THEME_FILES; do files+=("$work/$f"); done

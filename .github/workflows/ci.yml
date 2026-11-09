@@ -23,8 +23,9 @@ jobs:
         with:
           persist-credentials: false
 
+      # fish for its completion tests; zsh ships with macOS.
       - name: Install lint and test tools
-        run: brew install shellcheck bats-core
+        run: brew install shellcheck bats-core fish
 
       # The real kitty, so its own config parser checks what iglass generates.
       - name: Install kitty
@@ -39,6 +40,8 @@ jobs:
           python3 --version
           shellcheck --version | head -2
           bats --version
+          zsh --version
+          fish --version
 
       - name: Lint
         run: make lint
@@ -60,8 +63,9 @@ jobs:
       - name: Install lint and test tools
         run: |
           sudo apt-get update
-          # gawk, the awk most desktop distros use, instead of Ubuntu's default mawk.
-          sudo apt-get install -y jq shellcheck bats gawk python3-jsonschema python3-yaml
+          # gawk, the awk most desktop distros use, instead of Ubuntu's default mawk; zsh and fish
+          # for their completion tests.
+          sudo apt-get install -y jq shellcheck bats gawk zsh fish python3-jsonschema python3-yaml
           awk --version | head -1
 
       # Ghostty has no official Ubuntu package; the Snap is the easiest way to get the real
@@ -106,6 +110,8 @@ jobs:
           python3 --version
           shellcheck --version | head -2
           bats --version
+          zsh --version
+          fish --version
 
       - name: Lint
         run: make lint

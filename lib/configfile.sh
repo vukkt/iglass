@@ -16,7 +16,7 @@ configfile_rewrite() {
     real=$(cd "$(dirname "$file")" && cd "$(dirname "$(readlink "$file")")" && pwd)/$(basename "$(readlink "$file")")
   fi
   dir=$(dirname "$real")
-  tmp=$(mktemp "$dir/.iglass-config.XXXXXX") || return 1
+  temp_make tmp "$dir/.iglass-config.XXXXXX" || return 1
   cat "$content" >"$tmp" || { rm -f "$tmp"; return 1; }
   if [[ -f "$real" ]]; then
     mode=$(file_mode "$real")
@@ -48,7 +48,7 @@ configfile_add_include() {
     [[ -f "$backup_dir/$backup_name" ]] || cp "$target" "$backup_dir/$backup_name"
   fi
   mkdir -p "$IGLASS_STATE_DIR"
-  tmp=$(mktemp "$IGLASS_STATE_DIR/.config-edit.XXXXXX") || return 1
+  temp_make tmp "$IGLASS_STATE_DIR/.config-edit.XXXXXX" || return 1
   if [[ -s "$target" ]]; then
     cat "$target" >"$tmp"
     if [[ -n "$(tail -c 1 "$target")" ]]; then # file lacked a final newline
@@ -72,7 +72,7 @@ configfile_add_include() {
 configfile_remove_include() {
   local target=$1 marker=$2 include=$3 strip=${4:-false} tmp
   configfile_has_include "$target" "$marker" "$include" || return 0
-  tmp=$(mktemp "$IGLASS_STATE_DIR/.config-edit.XXXXXX") || return 1
+  temp_make tmp "$IGLASS_STATE_DIR/.config-edit.XXXXXX" || return 1
   # Not "include": that's a reserved word in gawk, the awk on Fedora and Arch.
   if ! awk -v marker="$marker" -v inc="$include" -v strip="$strip" '
     { lines[NR] = $0 }
