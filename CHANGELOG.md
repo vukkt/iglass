@@ -28,6 +28,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   including one next to your Ghostty or kitty config. iglass now removes them on the way out.
 - The install script could leave a hidden `.iglass.*` folder in `~/.local/share` when
   interrupted while copying.
+- On Linux without a desktop session (over SSH, on a console, some window managers), iglass
+  printed `XDG_CURRENT_DESKTOP: unbound variable` errors while it worked. It now treats the
+  desktop as unknown, quietly.
 - `--help` had one misaligned line.
 
 ## [1.6.1] - 2026-10-28

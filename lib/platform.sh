@@ -74,7 +74,10 @@ desktop_id() {
     *:Hyprland:*) printf 'hyprland\n' ;;
     *:niri:*) printf 'niri\n' ;;
     *:GNOME:*) printf 'gnome\n' ;;
-    *) printf '%s\n' "${XDG_CURRENT_DESKTOP%%:*}" ;;
+    *)
+      local desktops=${XDG_CURRENT_DESKTOP:-} # unset over SSH or on a console
+      printf '%s\n' "${desktops%%:*}"
+      ;;
   esac
 }
 
