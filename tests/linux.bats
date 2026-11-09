@@ -28,6 +28,18 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
   [[ ! -e "$(profile_file)" ]] || false
 }
 
+@test "linux: without a desktop session (SSH, a console), everything works quietly" {
+  # An unset variable read under set -u: bash 4+ (Linux) reports it, macOS's bash 3.2 doesn't.
+  unset XDG_CURRENT_DESKTOP
+  run "$IGLASS" install
+  assert_success_
+  assert_output_has "Tinted"
+  for cmd in doctor status list uninstall; do
+    run "$IGLASS" "$cmd"
+    [[ "$output" != *"unbound variable"* ]] || { echo "iglass $cmd: $output"; false; }
+  done
+}
+
 @test "linux: on a desktop without blur, install defaults to Tinted and says why" {
   XDG_CURRENT_DESKTOP=GNOME run "$IGLASS" install
   assert_success_

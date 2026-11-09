@@ -4,14 +4,18 @@
 # Usage: tools/screenshots.sh [OUT_DIR] [SUFFIX] [TERMINAL]
 #   OUT_DIR   default docs/screenshots
 #   SUFFIX    appended to file names, e.g. "-light" (switch macOS appearance yourself first)
-#   TERMINAL  iterm2 (default), ghostty or kitty; their shots are named <terminal>-<variant><suffix>.png
+#   TERMINAL  iterm2 (default), ghostty, kitty or warp; their shots are named <terminal>-<variant><suffix>.png
 #
-# For kitty, KITTY_APPEARANCE=dark|light picks the palette without changing the system appearance.
+# For kitty and Warp, KITTY_APPEARANCE=dark|light (WARP_APPEARANCE for Warp) picks the palette
+# without changing the system appearance.
 #
 # Needs Screen Recording permission for the app running this script. For iTerm2, iglass must
 # be installed (bin/iglass install). For Ghostty, the themes are generated into a scratch
 # folder and Ghostty runs with only them, so the user's own Ghostty config never shows up. kitty
-# runs the same way, from a scratch KITTY_CONFIG_DIRECTORY.
+# runs the same way, from a scratch KITTY_CONFIG_DIRECTORY, and Warp with a scratch HOME (its
+# settings, themes and shell startup file) and no network, so no update or sign-in banners show.
+# Warp keeps one thing outside HOME: whether its welcome screen was seen. If it hasn't been, the
+# script marks it seen (defaults write dev.warp.Warp-Stable HasCompletedOnboarding true).
 #
 # Glass shows whatever is behind it. To keep shots identical between runs, and to never
 # capture other windows or anything personal, each shot is taken over a generated backdrop
@@ -31,6 +35,8 @@ backdrop_name="iglass Screenshot Backdrop"
 ghostty_app=/Applications/Ghostty.app
 kitty_app=/Applications/kitty.app
 kitty_pid=""
+warp_app=/Applications/Warp.app
+warp_pid=""
 mkdir -p "$out"
 
 # Capture area in points (iTerm2), and the backdrop around it: {left, top, right, bottom}.
@@ -41,6 +47,7 @@ work=$(mktemp -d)
 backdrop_window=""
 cleanup() {
   [[ -n "$kitty_pid" ]] && kill "$kitty_pid" 2>/dev/null
+  [[ -n "$warp_pid" ]] && kill "$warp_pid" 2>/dev/null
 
   if [[ -n "$backdrop_window" ]]; then
     osascript -e "tell application id \"com.googlecode.iterm2\" to close (window id $backdrop_window)" \
@@ -85,8 +92,8 @@ end run
 APPLESCRIPT
 }
 
-if [[ "$terminal" == kitty ]]; then
-  # kitty can't be told where to open, so the backdrop covers the whole screen.
+if [[ "$terminal" == kitty || "$terminal" == warp ]]; then
+  # kitty and Warp can't be told where to open, so the backdrop covers the whole screen.
   screen=$(osascript -l JavaScript -e 'ObjC.import("AppKit"); const f = $.NSScreen.mainScreen.frame; [f.size.width, f.size.height].join(" ")')
   read -r sw sh <<<"$screen"
   backdrop_window=$(open_window "$backdrop_name" 0 0 "$sw" "$sh")
@@ -124,10 +131,11 @@ function run(argv) {
   const list = ObjC.castRefToObject($.CGWindowListCopyWindowInfo($.kCGWindowListOptionOnScreenOnly, 0));
   for (let i = 0; i < list.count; i++) {
     const w = list.objectAtIndex(i);
+    const b = w.objectForKey("kCGWindowBounds");
+    const v = (k) => Math.round(ObjC.unwrap(b.objectForKey(k)));
+    // Layer 0 is ordinary windows; small ones are an app's helper strips, not its window.
     if (ObjC.unwrap(w.objectForKey("kCGWindowOwnerName")) === argv[0] &&
-        ObjC.unwrap(w.objectForKey("kCGWindowLayer")) === 0) {
-      const b = w.objectForKey("kCGWindowBounds");
-      const v = (k) => Math.round(ObjC.unwrap(b.objectForKey(k)));
+        ObjC.unwrap(w.objectForKey("kCGWindowLayer")) === 0 && v("Height") > 100) {
       return [v("X"), v("Y"), v("Width"), v("Height")].join(",");
     }
   }
@@ -181,6 +189,59 @@ capture_kitty() { # VARIANT FILE
   echo "wrote ${2#"$root"/}"
 }
 
+capture_warp() { # VARIANT FILE
+  local home bounds
+  # Without symlinks (/var is one), so Warp sees the shell start in HOME and shows it as ~.
+  home="$(cd -P "$work" && pwd)/warp-home"
+  rm -rf "$home"
+  mkdir -p "$home/.warp/themes"
+  NO_COLOR=1 IGLASS_PLATFORM=macos "$root/bin/iglass" export --terminal warp --variant "$1" \
+    --appearance "${WARP_APPEARANCE:-auto}" --dir "$work/warp" >/dev/null
+  cp "$work/warp/"*.yaml "$home/.warp/themes/"
+  # iglass's settings, plus a window about the size of the other shots and nothing that adds a
+  # banner or a login item.
+  {
+    awk '{ print } /^\[appearance.window\]$/ {
+      print "open_windows_at_custom_size = true"
+      print "new_windows_num_columns = 92"
+      print "new_windows_num_rows = 38"
+    }' "$work/warp/iglass-settings.toml"
+    printf '\n[general]\nlogin_item = false\nrestore_session = false\nautoupdate_enabled = false\nshow_changelog_after_update = false\n'
+    printf '\n[privacy]\ntelemetry_enabled = false\ncrash_reporting_enabled = false\n'
+  } >"$home/.warp/settings.toml"
+  # The shell Warp starts shows the demo, as the first block.
+  printf 'PS1="%%F{cyan}~/Projects/iglass%%f ❯ "\nclear\n%q\n' "$demo" >"$home/.zshrc"
+  [[ "$(defaults read dev.warp.Warp-Stable HasCompletedOnboarding 2>/dev/null)" == true ]] ||
+    defaults write dev.warp.Warp-Stable HasCompletedOnboarding -string true
+  # Warp shows buttons on the block under the pointer: move it to the left edge, away from
+  # where the window opens (and from the screen's corners).
+  osascript -l JavaScript -e 'ObjC.import("CoreGraphics"); ObjC.import("AppKit");
+    $.CGWarpMouseCursorPosition({x: 12, y: Math.round($.NSScreen.mainScreen.frame.size.height / 2)})' >/dev/null
+  HOME="$home" ZDOTDIR="$home" HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://127.0.0.1:9 \
+    ALL_PROXY=http://127.0.0.1:9 "$warp_app/Contents/MacOS/stable" >/dev/null 2>&1 &
+  warp_pid=$!
+  for _ in {1..40}; do
+    bounds=$(window_bounds Warp)
+    [[ -n "$bounds" && "${bounds##*,}" -gt 100 ]] && break
+    sleep 0.25
+  done
+  [[ -n "$bounds" ]] || { echo "could not find the Warp window" >&2; exit 1; }
+  sleep 4 # the shell starts, the demo runs, and the blur settles
+  bounds=$(window_bounds Warp)
+  screencapture -x -R"$bounds" "$2" || {
+    echo "screencapture failed: grant Screen Recording permission and restart the terminal app" >&2
+    exit 1
+  }
+  kill "$warp_pid" 2>/dev/null || true
+  wait "$warp_pid" 2>/dev/null || true
+  warp_pid=""
+  sleep 1.5
+  echo "wrote ${2#"$root"/}"
+}
+
+if [[ "$terminal" == warp ]]; then
+  [[ -d "$warp_app" ]] || { echo "Warp is not installed" >&2; exit 1; }
+fi
 if [[ "$terminal" == kitty ]]; then
   [[ -d "$kitty_app" ]] || { echo "kitty is not installed" >&2; exit 1; }
   NO_COLOR=1 "$root/bin/iglass" export --terminal kitty --appearance "${KITTY_APPEARANCE:-auto}" \
@@ -196,6 +257,8 @@ fi
 for variant in $(jq -r '.variantOrder[]' "$root/data/palette.json"); do
   if [[ "$terminal" == kitty ]]; then
     capture_kitty "$variant" "$out/kitty-$variant$suffix.png"
+  elif [[ "$terminal" == warp ]]; then
+    capture_warp "$variant" "$out/warp-$variant$suffix.png"
   elif [[ "$terminal" == ghostty ]]; then
     capture_ghostty "$variant" "$out/ghostty-$variant$suffix.png"
   else

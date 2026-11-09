@@ -20,23 +20,30 @@ ${UI_BOLD}Terminal${UI_RESET} (install, preview, export, uninstall)
                        uninstall defaults to all; all skips terminals that aren't installed)
   --glass MODE         Ghostty only: auto (default), native (real Liquid Glass, macOS 26+)
                        or blur (always blur on Linux)
+  --dir FOLDER         export: the folder to write Ghostty, kitty or Warp files to
 
 ${UI_BOLD}Look options${UI_RESET} (install, export)
-  --variant clear|frosted|tinted|solid   Variant used for --default, preview and custom
-                                         settings (default: frosted)
+  --variant NAME       clear, frosted, tinted or solid (default: frosted; tinted on Linux
+                       desktops that don't blur). Ghostty, kitty and Warp get this variant;
+                       iTerm2 gets all four as profiles and uses it for --default and preview
   --accent NAME        blue, purple, pink, red, orange, yellow, green, graphite
   --contrast LEVEL     standard (default) or high (stronger colors for readability)
   --appearance MODE    auto (default: follow light/dark mode), dark or light (always)
-  --cursor STYLE      bar (default), box, underline, or keep (use your own)
+  --cursor STYLE       bar (default), box, underline, or keep (use your own)
   --window STYLE       native (default), no-titlebar, or keep (use your own)
   --font FONT          keep (default), sf-mono, or "PostScriptName [size]"
-  --opacity 0.05–1     Adds an "iglass Custom" profile with this opacity
-  --blur 0–64          Adds an "iglass Custom" profile with this blur radius (0 = off)
+  --opacity 0.05–1     Your own opacity instead of the variant's (iTerm2: an extra
+                       "iglass Custom" profile)
+  --blur 0–64          Your own blur radius, 0 = off (iTerm2: in "iglass Custom" too)
   --force              Allow an opacity below the readable minimum
 
 ${UI_BOLD}App-wide options${UI_RESET} (install, iTerm2 on macOS only; iTerm2 restarts, original values are saved)
   --app-settings       Native title bar (Automatic theme) and roomier padding
   --default            Make the chosen variant your default profile
+
+${UI_BOLD}Uninstall options${UI_RESET} (iTerm2 on macOS, when --app-settings or --default was used)
+  --restore-app-settings  Put iTerm2's app-wide settings back without asking
+  --keep-app-settings     Keep them as they are
 
 ${UI_BOLD}Other${UI_RESET}
   -y, --yes            Answer yes to questions (also needed when not run in a terminal)

@@ -310,3 +310,25 @@ include_count() { grep -cxF "$(include_line)" "$1" || true; }
     done
   done
 }
+
+@test "an interrupted install leaves nothing half-done behind" {
+  fake_ghostty
+  export MOCK_GHOSTTY_PAUSE="$SANDBOX/resume"
+  # In the background (closing bats's fd 3), paused while Ghostty checks iglass's files.
+  "$IGLASS" install --terminal ghostty >/dev/null 2>&1 3>&- &
+  local pid=$! code=0
+  for _ in {1..200}; do
+    [[ -e "$MOCK_GHOSTTY_PAUSE.waiting" ]] && break
+    sleep 0.05
+  done
+  [[ -e "$MOCK_GHOSTTY_PAUSE.waiting" ]] || false
+  run ls -A "$IGLASS_STATE_DIR"
+  [[ "$output" == *.ghostty.* ]] || { echo "no working folder mid-install: $output"; false; }
+  kill -TERM "$pid"
+  : >"$MOCK_GHOSTTY_PAUSE"
+  wait "$pid" || code=$?
+  [[ $code == 143 ]] || { echo "exit status $code"; false; }
+  run ls -A "$IGLASS_STATE_DIR"
+  [[ "$output" != *.ghostty.* ]] || { echo "left behind: $output"; false; }
+  [[ ! -e "$HOME/.config/ghostty/config.ghostty" && ! -e "$HOME/.config/ghostty/config" ]] || false
+}

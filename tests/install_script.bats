@@ -23,7 +23,7 @@ setup() {
   "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
   # A fixed collation: some locales sort LICENSE after bin.
   run env LC_ALL=C ls "$PREFIX/share/iglass"
-  [[ "$output" == $'LICENSE\nbin\ndata\nlib' ]] || false
+  [[ "$output" == $'LICENSE\nbin\ncompletions\ndata\nlib' ]] || false
 }
 
 @test "reinstalling replaces the previous copy cleanly" {
@@ -41,6 +41,43 @@ setup() {
   run "$REPO_ROOT/install.sh" --uninstall --prefix "$PREFIX"
   assert_success_
   [[ ! -e "$PREFIX/bin/iglass" && ! -e "$PREFIX/share/iglass" ]] || false
+}
+
+@test "links tab completion for bash, zsh and fish, and removes it again" {
+  run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
+  assert_success_
+  [[ -L "$PREFIX/share/bash-completion/completions/iglass" ]] || false
+  [[ -L "$PREFIX/share/zsh/site-functions/_iglass" ]] || false
+  [[ -L "$PREFIX/share/fish/vendor_completions.d/iglass.fish" ]] || false
+  # The bash one works through its link.
+  run bash -c 'source "$1"; COMP_WORDS=(iglass install --cursor ""); COMP_CWORD=3; _iglass; echo "${COMPREPLY[*]}"' \
+    _ "$PREFIX/share/bash-completion/completions/iglass"
+  [[ "$output" == "bar box underline keep" ]] || false
+  # Reinstalling keeps them; uninstalling removes them along with the command.
+  run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
+  [[ -L "$PREFIX/share/zsh/site-functions/_iglass" ]] || false
+  run "$REPO_ROOT/install.sh" --uninstall --prefix "$PREFIX"
+  [[ ! -e "$PREFIX/share/bash-completion/completions/iglass" ]] || false
+  [[ ! -L "$PREFIX/share/zsh/site-functions/_iglass" ]] || false
+  [[ ! -L "$PREFIX/share/fish/vendor_completions.d/iglass.fish" ]] || false
+}
+
+@test "a completion file that isn't iglass's is left alone" {
+  mkdir -p "$PREFIX/share/zsh/site-functions"
+  echo "# mine" >"$PREFIX/share/zsh/site-functions/_iglass"
+  run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
+  assert_success_
+  assert_output_has "isn't iglass's; left it alone"
+  [[ "$(cat "$PREFIX/share/zsh/site-functions/_iglass")" == "# mine" ]] || false
+  run "$REPO_ROOT/install.sh" --uninstall --prefix "$PREFIX"
+  [[ "$(cat "$PREFIX/share/zsh/site-functions/_iglass")" == "# mine" ]] || false
+}
+
+@test "tells zsh users how to add the completion folder to fpath" {
+  SHELL=/bin/zsh run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
+  assert_output_has "fpath=(\"$PREFIX/share/zsh/site-functions\" \$fpath)"
+  SHELL=/bin/bash run "$REPO_ROOT/install.sh" --local --prefix "$PREFIX"
+  [[ "$output" != *fpath* ]] || false
 }
 
 @test "refuses an incomplete package and leaves the old install alone" {
@@ -123,6 +160,7 @@ CURL
 @test "no shell file puts a non-ASCII character right after a variable" {
   # bash 3.2 reads such bytes as part of the name: "$version…" looks up "version…".
   run env LC_ALL=C grep -nE '\$[A-Za-z_][A-Za-z0-9_]*[^ -~[:space:]]' \
-    "$REPO_ROOT/bin/iglass" "$REPO_ROOT"/lib/*.sh "$REPO_ROOT/install.sh" "$REPO_ROOT"/tools/*.sh
+    "$REPO_ROOT/bin/iglass" "$REPO_ROOT"/lib/*.sh "$REPO_ROOT/install.sh" "$REPO_ROOT"/tools/*.sh \
+    "$REPO_ROOT/completions/iglass.bash"
   [[ "$status" -eq 1 ]] || { echo "$output" >&2; return 1; }
 }

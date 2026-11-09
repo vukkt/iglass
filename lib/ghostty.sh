@@ -168,7 +168,7 @@ ghostty_supports_native_glass() {
   bin=$(ghostty_bin)
   [[ -n "$bin" ]] || return 1
   mkdir -p "$IGLASS_STATE_DIR" 2>/dev/null
-  tmp=$(mktemp -d "$IGLASS_STATE_DIR/.ghostty-probe.XXXXXX") || return 1
+  temp_make tmp -d "$IGLASS_STATE_DIR/.ghostty-probe.XXXXXX" || return 1
   mkdir -p "$tmp/.config/ghostty"
   printf 'background-blur = macos-glass-regular\n' >"$tmp/.config/ghostty/config.ghostty"
   if HOME="$tmp" XDG_CONFIG_HOME="$tmp/.config" "$bin" +validate-config >/dev/null 2>&1; then
@@ -237,7 +237,7 @@ ghostty_install() {
   glass=$(jq -r 'if .glass == "native" then "real Liquid Glass" else "blur" end' <<<"$opts")
   if is_linux && ! desktop_blurs ghostty; then glass="transparency, no blur on this desktop"; fi
   mkdir -p "$IGLASS_STATE_DIR"
-  work=$(mktemp -d "$IGLASS_STATE_DIR/.ghostty.XXXXXX") || die "Could not create a temporary folder."
+  temp_make work -d "$IGLASS_STATE_DIR/.ghostty.XXXXXX" || die "Could not create a temporary folder."
   ghostty_export_dir "$opts" "$work"
   if ! ghostty_validate "$work"; then
     rm -rf "$work"

@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-IGLASS_VERSION="1.6.1"
+IGLASS_VERSION="1.7.0"
 
 # Find the install root, following symlinks (Homebrew and install.sh link bin/iglass into PATH).
 _iglass_resolve_root() {
@@ -21,6 +21,8 @@ IGLASS_ROOT=$(_iglass_resolve_root)
 
 # shellcheck source=lib/ui.sh
 source "$IGLASS_ROOT/lib/ui.sh"
+# shellcheck source=lib/temp.sh
+source "$IGLASS_ROOT/lib/temp.sh"
 # shellcheck source=lib/platform.sh
 source "$IGLASS_ROOT/lib/platform.sh"
 # shellcheck source=lib/env.sh
@@ -50,6 +52,9 @@ source "$IGLASS_ROOT/lib/commands.sh"
 
 main() {
   local args=() arg command
+  # Exit on Ctrl-C or kill through the EXIT trap, so temporary files are removed (lib/temp.sh).
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
   for arg in "$@"; do
     case "$arg" in
       -y | --yes) IGLASS_ASSUME_YES=1 ;;

@@ -1,6 +1,7 @@
-# Development tasks. Requires: python3 (palette build), shellcheck and bats-core (lint/tests).
+# Development tasks. Requires: python3 (palette build), shellcheck and bats-core (lint/tests);
+# zsh and fish for their completion tests (skipped without them).
 
-SHELL_FILES := bin/iglass lib/*.sh install.sh tools/*.sh tests/*.bash tests/*.bats
+SHELL_FILES := bin/iglass lib/*.sh install.sh tools/*.sh tests/*.bash tests/*.bats completions/iglass.bash
 
 # Suites tagged macos need macOS tools (plutil, defaults); on Linux the rest run.
 BATS_FILTER := $(if $(filter Linux,$(shell uname -s)),--filter-tags '!macos',)

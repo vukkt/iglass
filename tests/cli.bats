@@ -25,6 +25,56 @@ setup() { setup_sandbox; }
   [[ ! -f "$(profile_file)" ]] || false
 }
 
+@test "help: the descriptions in each section line up" {
+  run "$IGLASS" --help
+  assert_success_
+  # The column each option's description starts in, per blank-line separated section.
+  run awk '
+    /^$/ { col = 0; next }
+    /^  -/ {
+      rest = substr($0, 3); i = index(rest, "  ")
+      if (!i) next
+      match(substr(rest, i), /[^ ]/)
+      c = 2 + i - 1 + RSTART
+      if (!col) col = c
+      else if (c != col) print "misaligned: " $0
+    }' <<<"${output//–/-}" # one column per character, whatever awk counts
+  [[ -z "$output" ]] || { echo "$output"; false; }
+}
+
+@test "help: lists every option the commands accept" {
+  local opts opt
+  opts=$(grep -oE '^ +--[a-z-]+( \| --[a-z-]+)*\)' "$REPO_ROOT/lib/commands.sh" | grep -oE -- '--[a-z-]+' | sort -u)
+  run "$IGLASS" --help
+  for opt in $opts; do
+    [[ "$output" == *"$opt "* ]] || { echo "not in --help: $opt"; false; }
+  done
+}
+
+@test "the version has a CHANGELOG entry" {
+  local version
+  version=$("$IGLASS" --version | cut -d' ' -f2)
+  grep -q "^## \[$version\] - [0-9]\{4\}-[0-9][0-9]-[0-9][0-9]$" "$REPO_ROOT/CHANGELOG.md" || false
+  grep -q "^\[$version\]: https://github.com/vukkt/iglass/releases/tag/v$version$" "$REPO_ROOT/CHANGELOG.md" || false
+}
+
+@test "release notes come from the version's CHANGELOG section" {
+  run "$REPO_ROOT/tools/release-notes.sh" 1.6.1
+  assert_success_
+  [[ "${lines[0]}" == "### Fixed" ]] || false
+  [[ "$output" == *"plasmashell --version"* && "$output" != *"[1.6.0]"* ]] || false
+  [[ "${lines[${#lines[@]} - 1]}" == '**Install or update:**'* ]] || false
+  run "$REPO_ROOT/tools/release-notes.sh" 0.0.1
+  assert_failure_
+  assert_output_has "no section for 0.0.1"
+}
+
+@test "lib/ makes temporary files only through temp_make" {
+  # temp_make removes them when iglass exits, even when it's interrupted (lib/temp.sh).
+  run grep -n 'mktemp' "$REPO_ROOT"/lib/*.sh
+  [[ "$(grep -v '^[^:]*/lib/temp.sh:' <<<"$output")" == "" ]] || { echo "$output"; false; }
+}
+
 @test "unknown command fails with a hint" {
   run "$IGLASS" frobnicate
   assert_failure_

@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 /scratch/
 .check-ghostty/
+.check-kitty/
+.check-warp/

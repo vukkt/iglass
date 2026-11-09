@@ -12,6 +12,7 @@
 #   MOCK_QUIT_REFUSE=1           iTerm2 ignores the quit request
 #   MOCK_MISSING_FONTS="A B"     fonts that report as not installed
 #   MOCK_MACOS=14.6              macOS version reported by sw_vers
+#   MOCK_GHOSTTY_PAUSE=FILE      the fake Ghostty's validator waits for FILE (see below)
 #
 # Tests run as macOS (IGLASS_PLATFORM=macos) unless they call use_linux, which switches iglass
 # to its Linux code paths with a ghostty command on PATH instead of Ghostty.app:
@@ -48,7 +49,7 @@ setup_sandbox() {
   export IGLASS_GHOSTTY_APP="$SANDBOX/no-ghostty.app" # fake_ghostty installs one
   export IGLASS_GHOSTTY_XDG_DIR="$SANDBOX/xdg/ghostty"
   export IGLASS_GHOSTTY_APPSUPPORT_DIR="$SANDBOX/appsupport/com.mitchellh.ghostty"
-  unset TERM_PROGRAM MOCK_GHOSTTY_REJECT MOCK_GHOSTTY_NO_GLASS
+  unset TERM_PROGRAM MOCK_GHOSTTY_REJECT MOCK_GHOSTTY_NO_GLASS MOCK_GHOSTTY_PAUSE
   export IGLASS_APPLY_TIMEOUT=2
   export MOCK_DIR MOCK_LOG
   unset IGLASS_ASSUME_YES MOCK_QUIT_REFUSE MOCK_MISSING_FONTS MOCK_MACOS IGLASS_GHOSTTY_BIN
@@ -186,6 +187,12 @@ if [[ -n "${MOCK_GHOSTTY_NO_GLASS:-}" ]] && grep -rq "macos-glass" "$dir"; then
   exit 1
 fi
 theme=$(sed -n 's/^theme = //p' "$config")
+# MOCK_GHOSTTY_PAUSE=FILE: validating iglass's files waits until FILE exists (FILE.waiting
+# says it's waiting), so a test can interrupt iglass mid-install.
+if [[ -n "${MOCK_GHOSTTY_PAUSE:-}" && -n "$theme" ]]; then
+  : >"$MOCK_GHOSTTY_PAUSE.waiting"
+  while [[ ! -e "$MOCK_GHOSTTY_PAUSE" ]]; do sleep 0.05; done
+fi
 for t in $(tr ',' ' ' <<<"$theme"); do
   t=${t#light:}
   t=${t#dark:}
