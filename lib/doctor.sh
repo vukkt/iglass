@@ -43,9 +43,10 @@ cmd_doctor() {
   return 1
 }
 
-# macOS, iTerm2 and (when present) Ghostty checks. Returns the number of problems found.
+# macOS checks: the system, then each terminal that is installed or has iglass files. Returns
+# the number of problems found.
 _doctor_macos() {
-  local problems=0 v app f broken=0 guids dupes font status
+  local problems=0 v status
 
   v=$(macos_version)
   if [[ -z "$v" ]]; then
@@ -56,6 +57,45 @@ _doctor_macos() {
     ui_fail "macOS $v is older than $IGLASS_MIN_MACOS, which iglass needs."
     problems=$((problems + 1))
   fi
+
+  # iTerm2 is one of four terminals: a Mac with only Ghostty, kitty or Warp is a healthy setup,
+  # so iTerm2 is checked when it's installed, has iglass files, or no other terminal is there.
+  if [[ -n "$(iterm_app_path)" ]] || profile_installed ||
+    ! { ghostty_present || kitty_present || warp_present; }; then
+    _doctor_iterm2 || problems=$((problems + $?))
+  fi
+
+  accessibility_hints "$(state_get '(.options // .ghostty.options // .kitty.options // .warp.options).variant')" \
+    "$(state_get '(.options // .ghostty.options // .kitty.options // .warp.options).contrast')"
+
+  if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
+    _doctor_ghostty || problems=$((problems + $?))
+  fi
+  if kitty_present || [[ -n "$(state_get '.kitty.installedAt')" ]]; then
+    _doctor_kitty || problems=$((problems + $?))
+  fi
+  if warp_present || [[ -n "$(state_get '.warp.installedAt')" ]]; then
+    _doctor_warp || problems=$((problems + $?))
+  fi
+
+  status=$(appsettings_status)
+  case "$status" in
+    applied) ui_ok "App-wide settings applied" ;;
+    aborted) ui_warn "Last app-wide settings change was cancelled (iTerm2 didn't quit). Run iglass install --app-settings to retry." ;;
+    failed)
+      ui_fail "Last app-wide settings change failed: $(state_get '.appSettings.lastError')"
+      problems=$((problems + 1))
+      ;;
+  esac
+  if [[ -n "$(state_get '.appSettings.pending.id')" ]]; then
+    ui_info "A settings change is waiting for iTerm2 to restart."
+  fi
+  return $problems
+}
+
+# iTerm2 checks. Returns the number of problems found.
+_doctor_iterm2() {
+  local problems=0 v app f broken=0 guids dupes font
 
   app=$(iterm_app_path)
   if [[ -z "$app" ]]; then
@@ -131,31 +171,6 @@ _doctor_macos() {
 
   if prefs_custom_folder; then
     ui_warn "iTerm2 loads settings from a custom folder; iglass can't change app-wide settings."
-  fi
-
-  accessibility_hints "$(state_get '.options.variant')" "$(state_get '.options.contrast')"
-
-  if ghostty_present || [[ -n "$(state_get '.ghostty.installedAt')" ]]; then
-    _doctor_ghostty || problems=$((problems + $?))
-  fi
-  if kitty_present || [[ -n "$(state_get '.kitty.installedAt')" ]]; then
-    _doctor_kitty || problems=$((problems + $?))
-  fi
-  if warp_present || [[ -n "$(state_get '.warp.installedAt')" ]]; then
-    _doctor_warp || problems=$((problems + $?))
-  fi
-
-  status=$(appsettings_status)
-  case "$status" in
-    applied) ui_ok "App-wide settings applied" ;;
-    aborted) ui_warn "Last app-wide settings change was cancelled (iTerm2 didn't quit). Run iglass install --app-settings to retry." ;;
-    failed)
-      ui_fail "Last app-wide settings change failed: $(state_get '.appSettings.lastError')"
-      problems=$((problems + 1))
-      ;;
-  esac
-  if [[ -n "$(state_get '.appSettings.pending.id')" ]]; then
-    ui_info "A settings change is waiting for iTerm2 to restart."
   fi
   return $problems
 }

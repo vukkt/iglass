@@ -314,6 +314,7 @@ cmd_install() {
   for t in $terminals; do
     if [[ "$OPT_TERMINAL" == all ]]; then
       case "$t" in
+        iterm2) [[ -n "$(iterm_app_path)" ]] || { ui_dim "  iTerm2 isn't installed; skipped."; continue; } ;;
         ghostty) ghostty_present || { ui_dim "  Ghostty isn't installed; skipped."; continue; } ;;
         kitty) kitty_present || { ui_dim "  kitty isn't installed; skipped."; continue; } ;;
         warp) warp_present || { ui_dim "  Warp isn't installed; skipped."; continue; } ;;
@@ -328,7 +329,8 @@ cmd_install() {
     installed_count=$((installed_count + 1))
   done
   if [[ $installed_count == 0 ]]; then
-    die "None of the terminals iglass supports is installed." "$(terminal_get_hint kitty). $(terminal_get_hint ghostty). $(terminal_get_hint warp)."
+    die "None of the terminals iglass supports is installed." \
+      "$(is_macos && printf 'Get iTerm2 from https://iterm2.com. ')$(terminal_get_hint kitty). $(terminal_get_hint ghostty). $(terminal_get_hint warp)."
   fi
 }
 
@@ -521,13 +523,11 @@ _preview_kitty() { # VARIANT
 
 cmd_list() {
   local installed_variant="" installed_accent="" k
-  if is_linux; then
-    installed_variant=$(state_get '(.ghostty.options // .kitty.options // .warp.options).variant')
-    installed_accent=$(state_get '(.ghostty.options // .kitty.options // .warp.options).accent')
-  elif profile_installed; then
-    installed_variant=$(state_get '.options.variant')
-    installed_accent=$(state_get '.options.accent')
-  fi
+  # What's installed: iTerm2's on a Mac that has it, else the first of the other terminals'.
+  local from='(.ghostty.options // .kitty.options // .warp.options)'
+  if is_macos && profile_installed; then from='.options'; fi
+  installed_variant=$(state_get "$from.variant")
+  installed_accent=$(state_get "$from.accent")
   ui_title "Variants"
   for k in $(palette_query '.variantOrder | join(" ")'); do
     printf '  %-9s %s%s\n' "$k" "$(palette_query '.variants[$k].description' --arg k "$k")" \
@@ -652,7 +652,7 @@ cmd_uninstall() {
     else
       ui_warn "$IGLASS_PROFILE_FILE isn't an iglass file; leaving it alone."
     fi
-  else
+  elif [[ -n "$(iterm_app_path)" ]]; then # say so only on a Mac that has iTerm2
     ui_info "iglass profiles were not installed."
   fi
   state_clear_install

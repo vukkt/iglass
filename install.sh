@@ -3,16 +3,27 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/vukkt/iglass/main/install.sh | bash
 #
-# Options:
-#   --version X.Y.Z   install a specific release (default: latest)
-#   --prefix DIR      install under DIR (default: ~/.local) → DIR/share/iglass, DIR/bin/iglass
-#   --local           install from the folder this script is in (a git checkout)
-#   --uninstall       remove the iglass command (run `iglass uninstall` first to remove the theme)
-#
-# Tab completion for bash, zsh and fish is linked into DIR/share, where bash-completion and fish
-# find it on their own; zsh needs DIR/share/zsh/site-functions in its fpath (install says how).
+# Options: see show_help below, or run with --help (piped: … | bash -s -- --help).
 
 set -euo pipefail
+
+# Printed from here rather than read back from this file: piped into bash, there is no file.
+show_help() {
+  cat <<'HELP'
+Installs the iglass command (not the theme itself; run `iglass install` afterwards).
+
+  curl -fsSL https://raw.githubusercontent.com/vukkt/iglass/main/install.sh | bash
+
+Options:
+  --version X.Y.Z   install a specific release (default: latest)
+  --prefix DIR      install under DIR (default: ~/.local) → DIR/share/iglass, DIR/bin/iglass
+  --local           install from the folder this script is in (a git checkout)
+  --uninstall       remove the iglass command (run `iglass uninstall` first to remove the theme)
+
+Tab completion for bash, zsh and fish is linked into DIR/share, where bash-completion and fish
+find it on their own; zsh needs DIR/share/zsh/site-functions in its fpath (install says how).
+HELP
+}
 
 REPO="vukkt/iglass"
 prefix="$HOME/.local"
@@ -26,7 +37,7 @@ while [[ $# -gt 0 ]]; do
     --prefix) prefix=${2:?--prefix needs a value}; shift 2 ;;
     --local) local_src=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd); shift ;;
     --uninstall) action=uninstall; shift ;;
-    -h | --help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) show_help; exit 0 ;;
     *) echo "install.sh: unknown option $1" >&2; exit 1 ;;
   esac
 done

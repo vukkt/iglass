@@ -3,6 +3,23 @@
 All notable changes to iglass. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.7.1] - 2026-11-15
+
+### Fixed
+- **`iglass doctor` on a Mac without iTerm2.** With iglass set up for Ghostty, kitty or Warp
+  only, doctor reported "iTerm2 is not installed" as a problem and exited with an error,
+  although everything was fine. It now checks iTerm2 only when iTerm2 is installed, when iglass
+  profiles for it exist, or when no other supported terminal is there.
+- `iglass install --terminal all` installed the iTerm2 profiles on a Mac that doesn't have
+  iTerm2. It now skips iTerm2 like any other terminal that isn't installed, as `--help` says.
+- `iglass list` didn't mark the installed variant and accent on a Mac where iglass is installed
+  for Ghostty, kitty or Warp but not for iTerm2.
+- `iglass uninstall` said iglass "was not installed" for iTerm2 and Ghostty on systems that
+  don't have them. It now stays quiet about terminals that aren't there, as it already did for
+  kitty and Warp.
+- The install script's `--help` printed a line of its own code after the options, and failed
+  when the script was piped into bash (`curl … | bash -s -- --help`).
+
 ## [1.7.0] - 2026-11-09
 
 ### Added
@@ -194,6 +211,7 @@ First release.
 - Hints for macOS Reduce Transparency and Increase Contrast.
 - `install.sh`, Homebrew formula, prebuilt `themes/` for use without the CLI.
 
+[1.7.1]: https://github.com/vukkt/iglass/releases/tag/v1.7.1
 [1.7.0]: https://github.com/vukkt/iglass/releases/tag/v1.7.0
 [1.6.1]: https://github.com/vukkt/iglass/releases/tag/v1.6.1
 [1.6.0]: https://github.com/vukkt/iglass/releases/tag/v1.6.0

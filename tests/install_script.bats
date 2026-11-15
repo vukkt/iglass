@@ -96,6 +96,18 @@ setup() {
   assert_output_has "Add $PREFIX/bin to your PATH"
 }
 
+@test "--help lists the options and nothing else, also when piped into bash" {
+  run "$REPO_ROOT/install.sh" --help
+  assert_success_
+  assert_output_has "--uninstall"
+  [[ "$output" != *"set -euo"* ]] || false
+  local direct=$output
+  # curl … | bash -s -- --help: there is no script file to read the help from.
+  run bash -c 'bash -s -- --help <"$1"' _ "$REPO_ROOT/install.sh"
+  assert_success_
+  [[ "$output" == "$direct" ]] || false
+}
+
 @test "rejects unknown options" {
   run "$REPO_ROOT/install.sh" --sparkle
   assert_failure_

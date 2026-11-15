@@ -235,6 +235,19 @@ needs_macos_tools() { [[ "$(uname -s)" == Darwin ]] || skip "needs macOS tools (
   [[ -f "$(profile_file)" && ! -e "$K" ]] || false
 }
 
+@test "kitty: --terminal all on a Mac without iTerm2 skips iTerm2 too" {
+  rm -rf "$IGLASS_ITERM_APP"
+  run "$IGLASS" install --terminal all
+  assert_success_
+  assert_output_has "iTerm2 isn't installed; skipped"
+  [[ ! -e "$(profile_file)" && -f "$K/iglass.conf" ]] || false
+  export IGLASS_KITTY_BIN="$SANDBOX/missing"
+  run "$IGLASS" install --terminal all
+  assert_failure_
+  assert_output_has "None of the terminals iglass supports is installed"
+  assert_output_has "Get iTerm2 from https://iterm2.com"
+}
+
 @test "kitty on Linux: --terminal all installs Ghostty and skips a missing kitty" {
   use_linux
   export IGLASS_KITTY_BIN="$SANDBOX/missing"
