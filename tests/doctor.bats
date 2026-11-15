@@ -70,6 +70,32 @@ EOF
   assert_output_has "older than 3.5.0"
 }
 
+@test "a Mac with Ghostty and no iTerm2 is a healthy setup" {
+  rm -rf "$IGLASS_ITERM_APP"
+  fake_ghostty
+  "$IGLASS" install --terminal ghostty --variant tinted --accent green
+  run "$IGLASS" doctor
+  assert_success_
+  assert_output_has "No problems found"
+  [[ "$output" != *iTerm2* && "$output" != *"profiles"* ]] || false
+  # list and uninstall talk about Ghostty's install, not about iTerm2.
+  run "$IGLASS" list
+  [[ "$output" == *"tinted"*"(selected)"* ]] || false
+  assert_output_has "green (installed)"
+  run "$IGLASS" uninstall
+  assert_success_
+  [[ "$output" != *"profiles"* ]] || false
+}
+
+@test "iglass profiles left behind without iTerm2 are still flagged" {
+  "$IGLASS" install
+  rm -rf "$IGLASS_ITERM_APP"
+  fake_ghostty
+  run "$IGLASS" doctor
+  assert_failure_
+  assert_output_has "iTerm2 is not installed"
+}
+
 @test "flags a macOS that is too old" {
   MOCK_MACOS=14.6 run "$IGLASS" doctor
   assert_failure_

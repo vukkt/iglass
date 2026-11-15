@@ -318,7 +318,7 @@ ghostty_uninstall() {
   fi
   if [[ $removed == 1 || -n "$target" ]]; then
     ui_ok "Removed iglass from Ghostty."
-  else
+  elif ghostty_present; then
     ui_info "iglass was not installed for Ghostty."
   fi
 }
