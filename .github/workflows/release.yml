@@ -29,6 +29,10 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     environment: homebrew-tap
+    defaults:
+      run:
+        # bash -eo pipefail: a download that fails inside a pipeline stops the step there.
+        shell: bash
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
       # The formula is edited in the tap's checkout; an update would stash it away.
@@ -76,8 +80,11 @@ jobs:
           [[ -n "$TAP_DEPLOY_KEY" ]] || { echo "::error::The homebrew-tap environment has no TAP_DEPLOY_KEY secret."; exit 1; }
           title=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json name --jq .name)
           mkdir -p ~/.ssh
-          # GitHub's SSH host keys, from its API over HTTPS rather than trusted on first use.
-          curl -fsSL --retry 3 https://api.github.com/meta | jq -r '.ssh_keys[] | "github.com " + .' >~/.ssh/known_hosts
+          # GitHub's SSH host keys, from its API over HTTPS rather than trusted on first use. Asked
+          # with the workflow's token: runners share addresses, and calls without one run into
+          # the API's rate limit (a 403, which left no keys and failed the 1.7.1 release's first run).
+          gh api meta --jq '.ssh_keys[] | "github.com " + .' >~/.ssh/known_hosts
+          [[ -s ~/.ssh/known_hosts ]] || { echo "::error::Could not get GitHub's SSH host keys."; exit 1; }
           (umask 077 && printf '%s\n' "$TAP_DEPLOY_KEY" >"$RUNNER_TEMP/tap-key")
           export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/tap-key -o IdentitiesOnly=yes"
           git clone --depth 1 git@github.com:vukkt/homebrew-tap.git "$RUNNER_TEMP/tap"
