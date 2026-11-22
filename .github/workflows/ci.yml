@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Weekly as well: the checks run against the latest Warp, the Ghostty Snap and the kitty cask,
+  # so a release of one that breaks iglass shows up without waiting for the next push.
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
