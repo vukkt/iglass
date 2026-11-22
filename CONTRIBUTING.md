@@ -22,7 +22,8 @@ the relevant part of Warp's real settings schema (`tests/fixtures`). `tests/linu
 which switches iglass to its Linux code paths. The suites tagged `macos` need macOS tools
 (`plutil`, `defaults`), so `make test` skips them on Linux. CI runs both, and on Ubuntu also
 checks iglass end to end against the real Ghostty, kitty and Warp's settings schema
-(`tools/check_warp.py`, which needs the `jsonschema` and `PyYAML` packages).
+(`tools/check_warp.py`, which needs the `jsonschema` and `PyYAML` packages). It also runs every
+Monday, so a new release of one of those terminals that breaks iglass is caught between pushes.
 
 `tests/completions.bats` presses Tab in bash, zsh (in a pseudo-terminal, `tests/complete.zsh`)
 and fish; the zsh and fish parts are skipped when those shells aren't installed.
