@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Weekly as well: the checks run against the latest Warp, the Ghostty Snap and the kitty cask,
-  # so a release of one that breaks iglass shows up without waiting for the next push.
+  # Weekly as well: the checks run against the latest Warp, Ghostty and kitty, so a release of
+  # one that breaks iglass shows up without waiting for the next push.
   schedule:
     - cron: '17 6 * * 1'
   workflow_dispatch:
@@ -82,14 +82,19 @@ jobs:
           sudo snap install ghostty --classic
           ghostty --version
 
-      # kitty 0.51.0 from its official release, checked against a pinned checksum.
+      # kitty's latest official release, checked against the SHA-256 GitHub publishes for it.
+      # Always the latest, like Warp and the Ghostty Snap, so nobody has to bump a version here.
       - name: Install kitty
         id: kitty
         continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -fsSL -o "$RUNNER_TEMP/kitty.txz" \
-            https://github.com/kovidgoyal/kitty/releases/download/v0.51.0/kitty-0.51.0-x86_64.txz
-          echo "c285daaf1b699997614939c8d1cd92dd8b99302ff12f18efcc3f69382aa72b1d  $RUNNER_TEMP/kitty.txz" | sha256sum -c -
+          read -r url digest < <(gh api repos/kovidgoyal/kitty/releases/latest --jq \
+            '.assets[] | select(.name | test("^kitty-[0-9.]+-x86_64\\.txz$")) | "\(.browser_download_url) \(.digest)"')
+          case $digest in sha256:?*) ;; *) echo "No SHA-256 published for '$url'"; exit 1 ;; esac
+          curl -fsSL -o "$RUNNER_TEMP/kitty.txz" "$url"
+          echo "${digest#sha256:}  $RUNNER_TEMP/kitty.txz" | sha256sum -c -
           sudo mkdir -p /opt/kitty && sudo tar -xJf "$RUNNER_TEMP/kitty.txz" -C /opt/kitty
           sudo ln -sf /opt/kitty/bin/kitty /usr/local/bin/kitty
           kitty --version
@@ -201,3 +206,7 @@ jobs:
       - name: Report a skipped Ghostty check
         if: steps.ghostty.outcome != 'success'
         run: echo "::warning::Ghostty could not be installed; the real-Ghostty checks were skipped."
+
+      - name: Report a skipped kitty check
+        if: steps.kitty.outcome != 'success'
+        run: echo "::warning::kitty could not be installed; the real-kitty checks were skipped."
