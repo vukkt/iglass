@@ -4,9 +4,12 @@ name: Release
 # date: fills in packaging/homebrew/iglass.rb with the release's url and sha256, checks the
 # formula with brew audit, install and test, then pushes it to the tap. It writes to the tap
 # with a deploy key that can write to that one repository; the key is a secret of the
-# homebrew-tap environment, which only release tags and main can use.
+# homebrew-tap environment, which only release tags and main can use. Then it points the
+# portfolio at the release (the portfolio job below).
 #
-# To redo it for a release (e.g. after fixing the formula): Actions › Release › Run workflow.
+# Autopilot starts it for the releases it publishes, and again when the tap or the portfolio are
+# behind. To redo it by hand (e.g. after fixing the formula): Actions › Release › Run workflow.
+# Both jobs change only what's out of date, so running it again is harmless.
 on:
   release:
     types: [published]
@@ -99,3 +102,53 @@ jobs:
             echo "Pushed iglass $VERSION to the tap: $(git rev-parse --short HEAD)"
           fi
           rm -f "$RUNNER_TEMP/tap-key"
+
+  # Then the portfolio (github.com/vukkt/vuk-portfolio): its "Latest release" line and the
+  # version on the iglass card (tools/portfolio-release.sh). It deploys itself on push. Writes
+  # with a deploy key that can write to that one repository, a secret of the portfolio
+  # environment, which only release tags and main can use. Only for the latest release.
+  portfolio:
+    needs: homebrew
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: portfolio
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Update the portfolio
+        env:
+          PORTFOLIO_DEPLOY_KEY: ${{ secrets.PORTFOLIO_DEPLOY_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ -n "$PORTFOLIO_DEPLOY_KEY" ]] || { echo "::error::The portfolio environment has no PORTFOLIO_DEPLOY_KEY secret."; exit 1; }
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          [[ "$TAG" == "$latest" ]] || { echo "$TAG isn't the latest release ($latest); the portfolio stays as it is."; exit 0; }
+          IFS=$'\t' read -r title published < <(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json name,publishedAt --jq '[.name, .publishedAt] | @tsv')
+          mkdir -p ~/.ssh
+          gh api meta --jq '.ssh_keys[] | "github.com " + .' >~/.ssh/known_hosts
+          [[ -s ~/.ssh/known_hosts ]] || { echo "::error::Could not get GitHub's SSH host keys."; exit 1; }
+          (umask 077 && printf '%s\n' "$PORTFOLIO_DEPLOY_KEY" >"$RUNNER_TEMP/portfolio-key")
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/portfolio-key -o IdentitiesOnly=yes"
+          git clone -q --depth 1 git@github.com:vukkt/vuk-portfolio.git "$RUNNER_TEMP/portfolio"
+          line=$(tools/portfolio-release.sh "$RUNNER_TEMP/portfolio" "$TAG" "$title" "$published")
+          cd "$RUNNER_TEMP/portfolio"
+          if git diff --quiet; then
+            echo "The portfolio already says: $line"
+          else
+            # The site reads a module generated from the content file; build it to be sure it
+            # still builds before it goes live.
+            node .skills/vuk-portfolio/scripts/sync_portfolio.cjs
+            npm ci --no-audit --no-fund
+            npm run build
+            git add .skills/vuk-portfolio/data/portfolio_content.json src/data/portfolio.ts
+            git -c user.name="$GITHUB_ACTOR" -c user.email="$GITHUB_ACTOR_ID+$GITHUB_ACTOR@users.noreply.github.com" \
+              commit -qm "Update iglass to ${TAG#v}"
+            git push -q origin HEAD
+            echo "The portfolio now says: $line ($(git rev-parse --short HEAD))"
+          fi
+          rm -f "$RUNNER_TEMP/portfolio-key"

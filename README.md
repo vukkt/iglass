@@ -412,7 +412,10 @@ The website ([vukkt.github.io/iglass](https://vukkt.github.io/iglass/)) is `site
 by the Website workflow with images taken from `docs/screenshots` at build time.
 
 Tests run in a sandbox with stand-ins for iTerm2, Ghostty, kitty, Warp and system commands, so
-they never touch your real settings. See [CONTRIBUTING.md](CONTRIBUTING.md).
+they never touch your real settings. Every week CI also checks iglass against the newest Ghostty,
+kitty and Warp; [docs/tested-with.md](docs/tested-with.md) lists the versions. Bots keep iglass
+up to date, release it and check each other's work: see
+[CONTRIBUTING.md](CONTRIBUTING.md#how-iglass-maintains-itself).
 
 ---
 

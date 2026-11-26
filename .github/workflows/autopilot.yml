@@ -1,0 +1,38 @@
+name: Autopilot
+
+# Publishes the release for a new version, keeps Homebrew and the portfolio on the latest
+# release, turns switched-off workflows back on, and opens an issue (closing it again later)
+# when something needs a person. Every day, and right away when a push changes the version.
+# The logic and what it checks: tools/autopilot.sh.
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  push:
+    branches: [main]
+    paths: [bin/iglass]
+  workflow_dispatch:
+
+permissions:
+  contents: write # publish releases
+  actions: write # start the Release workflow, turn workflows back on
+  issues: write # the "Autopilot needs a hand" issue
+
+concurrency:
+  group: autopilot
+  cancel-in-progress: false
+
+jobs:
+  autopilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, to find the commit that set the version.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check and fix what it can
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: tools/autopilot.sh

@@ -1,0 +1,27 @@
+name: Auto-merge
+
+# PRs from Dependabot, and PRs labelled automerge, merge themselves: this turns on GitHub's
+# auto-merge for them, and the rules on main decide when (CI's macos and linux checks pass).
+# PRs from forks never qualify, and only people who can write here can add the label.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.pull_request.user.login == 'dependabot[bot]' ||
+       contains(github.event.pull_request.labels.*.name, 'automerge'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Turn on auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR"
