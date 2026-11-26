@@ -270,7 +270,7 @@ jobs:
           today=$(date -u +%F)
           tools/tested-with.sh "$today" "$RUN_URL" >docs/tested-with.md
           [[ -n "$(git status --porcelain docs/tested-with.md)" ]] || { echo "Nothing changed."; exit 0; }
-          branch=autopilot/tested-with
+          branch=autopilot-tested-with
           git switch -c "$branch"
           git add docs/tested-with.md
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
