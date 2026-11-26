@@ -1,9 +1,13 @@
-# Keeps the pinned GitHub Actions in .github/workflows up to date (opens a PR when one updates).
+# Keeps the pinned GitHub Actions in .github/workflows up to date: at most one PR a month, with
+# every action that has a new release in it.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
     commit-message:
       prefix: CI
