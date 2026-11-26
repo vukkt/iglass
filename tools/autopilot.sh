@@ -5,7 +5,8 @@
 #  1. Publishes the release for a new version in bin/iglass; the Release workflow then updates
 #     Homebrew and the portfolio.
 #  2. Runs the Release workflow again when Homebrew or the portfolio are behind the latest release.
-#  3. Turns back on workflows GitHub switched off for inactivity.
+#  3. Turns back on workflows GitHub switched off for inactivity, and deletes the branches of
+#     merged PRs (GitHub does that by itself only when a person merges).
 #  4. Checks the latest runs of CI, Release and Website, that the weekly CI run happens, and
 #     that PRs from bots don't get stuck.
 #  5. Keeps one issue, labelled autopilot, open while something needs a person, and closes it
@@ -92,6 +93,17 @@ while read -r id name; do
   did "Turned the $name workflow back on (GitHub had switched it off for inactivity)."
 done < <(gh api "repos/$repo/actions/workflows" \
   --jq '.workflows[] | select(.state == "disabled_inactivity") | "\(.id) \(.name)"')
+
+# Branches of merged PRs: GitHub deletes them by itself only when a person merges, not a bot.
+# A branch with an open PR, or with no PR at all, stays.
+while read -r branch; do
+  [[ -n "$branch" && "$branch" != main ]] || continue
+  state=$(gh pr list --repo "$repo" --head "$branch" --state all --limit 5 --json state \
+    --jq 'if any(.[]; .state == "OPEN") then "OPEN" else (.[0].state // "") end')
+  [[ "$state" == MERGED ]] || continue
+  act gh api -X DELETE "repos/$repo/git/refs/heads/$branch" --silent
+  did "Deleted the branch $branch: its PR is merged."
+done < <(gh api "repos/$repo/branches" --paginate --jq '.[].name')
 
 # 4. The latest finished run of each workflow (a run cancelled by a newer one doesn't count).
 for wf in ci.yml release.yml pages.yml; do
