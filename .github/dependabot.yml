@@ -1,11 +1,14 @@
 # Keeps the pinned GitHub Actions in .github/workflows up to date: at most one PR a month, with
-# every action that has a new release in it.
+# every action that has a new release in it. It merges itself once CI passes (automerge.yml);
+# the cooldown keeps a release out until it's a week old, so a bad one is usually pulled first.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]

@@ -5,7 +5,8 @@ on:
     branches: [main]
   pull_request:
   # Weekly as well: the checks run against the latest Warp, Ghostty and kitty, so a release of
-  # one that breaks iglass shows up without waiting for the next push.
+  # one that breaks iglass shows up without waiting for the next push. The weekly run also
+  # records what it checked (docs/tested-with.md) and checks that Autopilot is running.
   schedule:
     - cron: '17 6 * * 1'
   workflow_dispatch:
@@ -23,6 +24,10 @@ jobs:
     # macOS 15+ ships /usr/bin/jq, plutil and defaults: the same tools iglass uses at runtime.
     runs-on: macos-15
     timeout-minutes: 20
+    # What this job checked, for docs/tested-with.md.
+    outputs:
+      macos: ${{ steps.versions.outputs.macos }}
+      kitty: ${{ steps.versions.outputs.kitty }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,9 +62,22 @@ jobs:
       - name: Tests
         run: make test
 
+      - name: Versions checked
+        id: versions
+        run: |
+          echo "macos=$(sw_vers -productVersion)" >>"$GITHUB_OUTPUT"
+          kitty=$(/Applications/kitty.app/Contents/MacOS/kitty --version 2>/dev/null | awk '{print $2}') || true
+          echo "kitty=$kitty" >>"$GITHUB_OUTPUT"
+
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # What this job checked, for docs/tested-with.md.
+    outputs:
+      ubuntu: ${{ steps.versions.outputs.ubuntu }}
+      ghostty: ${{ steps.versions.outputs.ghostty }}
+      kitty: ${{ steps.versions.outputs.kitty }}
+      warp: ${{ steps.versions.outputs.warp }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -210,3 +228,83 @@ jobs:
       - name: Report a skipped kitty check
         if: steps.kitty.outcome != 'success'
         run: echo "::warning::kitty could not be installed; the real-kitty checks were skipped."
+
+      - name: Versions checked
+        id: versions
+        env:
+          GHOSTTY_OK: ${{ steps.ghostty.outcome }}
+          KITTY_OK: ${{ steps.kitty.outcome }}
+          WARP_OK: ${{ steps.warp.outcome }}
+        run: |
+          . /etc/os-release && echo "ubuntu=$VERSION_ID" >>"$GITHUB_OUTPUT"
+          [[ "$GHOSTTY_OK" != success ]] || echo "ghostty=$(ghostty --version | head -1 | awk '{print $2}')" >>"$GITHUB_OUTPUT"
+          [[ "$KITTY_OK" != success ]] || echo "kitty=$(kitty --version | awk '{print $2}')" >>"$GITHUB_OUTPUT"
+          [[ "$WARP_OK" != success ]] || echo "warp=$(dpkg-deb -f "$RUNNER_TEMP/warp.deb" Version)" >>"$GITHUB_OUTPUT"
+
+  # On the weekly run (or one started by hand): records what was checked in docs/tested-with.md,
+  # through a PR that merges itself once CI passes on it. This is also the loop's heartbeat:
+  # GitHub switches off scheduled workflows in a repository with no activity for 60 days.
+  tested-with:
+    needs: [macos, linux]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Propose docs/tested-with.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MACOS: ${{ needs.macos.outputs.macos }}
+          KITTY_MACOS: ${{ needs.macos.outputs.kitty }}
+          UBUNTU: ${{ needs.linux.outputs.ubuntu }}
+          GHOSTTY: ${{ needs.linux.outputs.ghostty }}
+          KITTY: ${{ needs.linux.outputs.kitty }}
+          WARP: ${{ needs.linux.outputs.warp }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          today=$(date -u +%F)
+          tools/tested-with.sh "$today" "$RUN_URL" >docs/tested-with.md
+          [[ -n "$(git status --porcelain docs/tested-with.md)" ]] || { echo "Nothing changed."; exit 0; }
+          branch=autopilot/tested-with
+          git switch -c "$branch"
+          git add docs/tested-with.md
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Tested with: $today"
+          git push -qf origin "$branch"
+          pr=$(gh pr list --head "$branch" --state open --json url --jq '.[0].url // empty')
+          [[ -n "$pr" ]] || pr=$(gh pr create --head "$branch" --label automerge --title "Tested with: $today" \
+            --body "The versions this week's CI run checked iglass against ([run]($RUN_URL)). Merges itself once CI passes.")
+          gh pr merge --auto --squash "$pr"
+          # A PR opened with the workflow's token starts no workflows, so start CI on it here:
+          # its macos and linux checks are what let it merge.
+          gh workflow run ci.yml --ref "$branch"
+          echo "Proposed in $pr"
+
+  # Autopilot watches the other workflows every day; this watches Autopilot, every week.
+  autopilot-alive:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Check Autopilot ran in the last two days, and succeeded
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          api="repos/$GITHUB_REPOSITORY/actions/workflows/autopilot.yml"
+          if [[ "$(gh api "$api" --jq .state)" == disabled_inactivity ]]; then
+            gh api -X PUT "$api/enable"
+            echo "::warning::GitHub had switched Autopilot off for inactivity; turned it back on."
+          fi
+          read -r conclusion created < <(gh run list --repo "$GITHUB_REPOSITORY" --workflow autopilot.yml \
+            --status completed --limit 1 --json conclusion,createdAt --jq '.[0] | "\(.conclusion) \(.createdAt)"')
+          echo "Autopilot's last run: $conclusion, $created"
+          (( $(date -u +%s) - $(date -u -d "$created" +%s) < 2 * 86400 )) ||
+            { echo "::error::Autopilot hasn't run since $created."; exit 1; }
+          [[ "$conclusion" == success ]] || { echo "::error::Autopilot's last run ended in $conclusion."; exit 1; }

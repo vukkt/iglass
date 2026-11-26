@@ -64,18 +64,42 @@ change makes a target unreachable, the build stops and names the color.
 `main` is protected: changes land through pull requests once CI passes on macOS and Linux.
 
 1. In a pull request: update `IGLASS_VERSION` in `bin/iglass`, add the version's section and
-   link to `CHANGELOG.md` (a test checks both), and run `make themes`. Merge it when CI is green.
-2. Tag the merge commit and publish the release, with notes taken from the changelog:
+   link to `CHANGELOG.md` (a test checks both), and run `make themes`. Title the PR with what the
+   release brings and the version, e.g. "Warp support (1.6.0)": the release is named after it
+   ("iglass 1.6.0: Warp support"). Add the `automerge` label, or merge it once CI is green.
+2. That's all. When the merge reaches `main`, [Autopilot](#how-iglass-maintains-itself) tags it
+   and publishes the release, with its notes taken from the changelog
+   (`tools/release-notes.sh`), then starts the [Release workflow](.github/workflows/release.yml).
+   That fills in [`packaging/homebrew/iglass.rb`](packaging/homebrew/iglass.rb) with the
+   release's url and checksum, runs `brew audit`, `install` and `test` on it, pushes it to
+   [vukkt/homebrew-tap](https://github.com/vukkt/homebrew-tap), and then updates the "Latest
+   release" line on the [portfolio](https://github.com/vukkt/vuk-portfolio). Change the formula
+   in this repo, never in the tap.
 
-   ```sh
-   git tag -a vX.Y.Z -m "iglass X.Y.Z: Short title" && git push origin vX.Y.Z
-   gh release create vX.Y.Z --verify-tag --title "iglass X.Y.Z: Short title" \
-     --notes-file <(tools/release-notes.sh X.Y.Z)
-   ```
+Publishing a release by hand still works the same way (`gh release create vX.Y.Z --title
+"iglass X.Y.Z: …" --notes-file <(tools/release-notes.sh X.Y.Z)`). If the Release workflow
+fails, fix the cause; Autopilot runs it again, or run it from Actions › Release › Run workflow,
+with the tag.
 
-3. That's all: publishing the release starts the [Release workflow](.github/workflows/release.yml),
-   which fills in [`packaging/homebrew/iglass.rb`](packaging/homebrew/iglass.rb) with the
-   release's url and checksum, runs `brew audit`, `install` and `test` on it, and pushes it to
-   [vukkt/homebrew-tap](https://github.com/vukkt/homebrew-tap). Change the formula in this repo,
-   never in the tap. If the workflow fails, fix the cause and run it again from Actions ›
-   Release › Run workflow, with the tag.
+## How iglass maintains itself
+
+Bots keep iglass up to date and check each other's work; a person is needed only when one of
+them can't fix something by itself.
+
+| What | Who | When |
+|---|---|---|
+| Test every change on macOS and Linux, with the real Ghostty, kitty and Warp | CI | every PR and push |
+| Test against the newest Warp, Ghostty and kitty, and record them in [docs/tested-with.md](docs/tested-with.md) through a PR that merges itself | CI | Mondays |
+| Update the GitHub Actions the workflows use, in one PR, once a release is a week old | Dependabot | monthly |
+| Merge Dependabot's PRs and PRs labelled `automerge`, once CI passes on them | [Auto-merge](.github/workflows/automerge.yml) | each such PR |
+| Publish the release for a new version; check Homebrew and the portfolio are on the latest release, and rerun the Release workflow if not; turn workflows GitHub switched off back on; check the latest CI, Release and Website runs, the weekly run, and stuck bot PRs | [Autopilot](tools/autopilot.sh) | daily, and when the version changes |
+| Check Autopilot itself ran and succeeded | CI | Mondays |
+| Update Homebrew and the portfolio for a release | [Release](.github/workflows/release.yml) | each release |
+
+When something needs a person, Autopilot opens an issue labelled `autopilot` that says what
+and links to the run, and closes it once everything works again. A failed weekly run also
+sends GitHub's usual email.
+
+What still takes a person: deciding what iglass should do and replying to people, fixing
+iglass when a new terminal release breaks it (the weekly run and Autopilot's issue say so
+within a week), and judging how the glass looks.
