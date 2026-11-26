@@ -1,7 +1,7 @@
 # Tested with
 
 Every week, CI checks iglass against the latest release of each terminal it can install on
-GitHub's machines. The last run, on 2026-11-26 ([its log](https://github.com/vukkt/iglass/actions/runs/45835160144)), checked:
+GitHub's machines. The last run, on 2026-11-26 ([its log](https://github.com/vukkt/iglass/actions/runs/45841795072)), checked:
 
 | | Version | What CI checks |
 |---|---|---|
